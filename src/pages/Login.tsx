@@ -4,17 +4,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Play, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder: redirect to dashboard
-    navigate("/dashboard");
+    setLoading(true);
+    const { error } = await signIn(email, password);
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      navigate("/dashboard");
+    }
   };
 
   return (
@@ -45,7 +56,9 @@ const Login = () => {
                 </button>
               </div>
             </div>
-            <Button variant="hero" className="w-full" size="lg" type="submit">Entrar</Button>
+            <Button variant="hero" className="w-full" size="lg" type="submit" disabled={loading}>
+              {loading ? "Entrando..." : "Entrar"}
+            </Button>
           </form>
 
           <p className="text-sm text-muted-foreground text-center mt-6">

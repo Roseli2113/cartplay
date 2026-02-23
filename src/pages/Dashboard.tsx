@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
-  Flame, Tv, QrCode, ChevronRight,
+  Flame, Tv, QrCode, ChevronRight, Shield,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const categories = ["Filmes", "Séries", "Desenhos", "Canais"];
 
@@ -18,18 +20,38 @@ const menuItems = [
   { icon: User, label: "Perfil", id: "profile" },
 ];
 
-const placeholderCards = Array.from({ length: 6 }, (_, i) => ({
-  id: i,
-  title: [`Ação Total`, `Aventura Épica`, `Drama Intenso`, `Comédia Leve`, `Terror Sombrio`, `Ficção Científica`][i],
-  category: categories[i % 4],
-}));
+interface ContentCard {
+  id: string;
+  title: string;
+  category: string;
+  thumbnail_url?: string;
+  stream_url?: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { signOut, profile, isAdmin } = useAuth();
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [content, setContent] = useState<ContentCard[]>([]);
 
-  const handleLogout = () => navigate("/");
+  useEffect(() => {
+    const fetchContent = async () => {
+      const tables = ["movies", "series", "cartoons", "live_channels"] as const;
+      const allContent: ContentCard[] = [];
+      for (const table of tables) {
+        const { data } = await supabase.from(table as any).select("id, title, category, thumbnail_url, stream_url");
+        if (data) allContent.push(...(data as unknown as ContentCard[]));
+      }
+      setContent(allContent);
+    };
+    fetchContent();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   const renderContent = () => {
     if (activeSection === "tv-app") {
@@ -63,12 +85,17 @@ const Dashboard = () => {
       );
     }
 
+    const displayContent: ContentCard[] = content.length > 0 ? content : Array.from({ length: 6 }, (_, i) => ({
+      id: String(i),
+      title: [`Ação Total`, `Aventura Épica`, `Drama Intenso`, `Comédia Leve`, `Terror Sombrio`, `Ficção Científica`][i],
+      category: categories[i % 4],
+    }));
+
     return (
       <div className="animate-fade-in">
-        <h2 className="text-2xl font-display font-bold mb-1">Olá, bem-vindo! 👋</h2>
+        <h2 className="text-2xl font-display font-bold mb-1">Olá, {profile?.name || "bem-vindo"}! 👋</h2>
         <p className="text-muted-foreground mb-8">O que você quer assistir hoje?</p>
 
-        {/* Categories */}
         <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
           {categories.map((cat) => (
             <button key={cat} className="px-5 py-2 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors whitespace-nowrap">
@@ -77,12 +104,15 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Content Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {placeholderCards.map((card) => (
+          {displayContent.map((card) => (
             <div key={card.id} className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer">
-              <div className="aspect-video bg-muted/50 flex items-center justify-center relative">
-                <Film className="w-10 h-10 text-muted-foreground/30" />
+              <div className="aspect-video bg-muted/50 flex items-center justify-center relative overflow-hidden">
+                {card.thumbnail_url ? (
+                  <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
+                ) : (
+                  <Film className="w-10 h-10 text-muted-foreground/30" />
+                )}
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors flex items-center justify-center">
                   <Play className="w-10 h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
                 </div>
@@ -95,20 +125,23 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Continue Watching */}
         <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
           Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {placeholderCards.slice(0, 4).map((card) => (
-            <div key={card.id} className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
+          {displayContent.slice(0, 4).map((card, i) => (
+            <div key={`continue-${card.id}`} className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
               <div className="aspect-video bg-muted/50 flex items-center justify-center">
-                <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
+                {card.thumbnail_url ? (
+                  <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
+                ) : (
+                  <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
+                )}
               </div>
               <div className="p-3">
                 <h3 className="font-medium text-sm truncate">{card.title}</h3>
                 <div className="w-full bg-muted rounded-full h-1 mt-2">
-                  <div className="bg-primary h-1 rounded-full" style={{ width: `${30 + card.id * 15}%` }} />
+                  <div className="bg-primary h-1 rounded-full" style={{ width: `${30 + i * 15}%` }} />
                 </div>
               </div>
             </div>
@@ -120,12 +153,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-2 px-5 h-16 border-b border-sidebar-border">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -148,6 +179,15 @@ const Dashboard = () => {
               {item.label}
             </button>
           ))}
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/admin")}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+            >
+              <Shield className="w-5 h-5 flex-shrink-0" />
+              Área Admin
+            </button>
+          )}
         </nav>
 
         <div className="p-3 border-t border-sidebar-border">
@@ -158,7 +198,6 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 min-h-screen">
         <header className="h-16 border-b border-border flex items-center px-4 lg:px-8 sticky top-0 bg-background/80 backdrop-blur-md z-30">
           <button className="lg:hidden mr-4 text-muted-foreground" onClick={() => setSidebarOpen(true)}>
