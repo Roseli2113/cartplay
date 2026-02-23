@@ -4,24 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Play, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
       return;
     }
-    navigate("/dashboard");
+    setLoading(true);
+    const { error } = await signUp(email, password, name);
+    setLoading(false);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." });
+      navigate("/login");
+    }
   };
 
   return (
@@ -60,7 +71,9 @@ const Register = () => {
               <Label htmlFor="confirm">Confirmar Senha</Label>
               <Input id="confirm" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
             </div>
-            <Button variant="hero" className="w-full" size="lg" type="submit">Criar conta</Button>
+            <Button variant="hero" className="w-full" size="lg" type="submit" disabled={loading}>
+              {loading ? "Criando..." : "Criar conta"}
+            </Button>
           </form>
 
           <p className="text-sm text-muted-foreground text-center mt-6">
