@@ -8,7 +8,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-const categories = ["Filmes", "Séries", "Desenhos", "Canais"];
+const categories = ["Filmes", "Séries", "Desenhos", "Canais", "Futebol"];
 
 const menuItems = [
   { icon: Home, label: "Início", id: "home" },
@@ -36,6 +36,7 @@ const Dashboard = () => {
   const [content, setContent] = useState<ContentCard[]>([]);
   const [playingContent, setPlayingContent] = useState<ContentCard | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -93,9 +94,11 @@ const Dashboard = () => {
       category: categories[i % 4],
     }));
 
-    const filtered = searchQuery
-      ? displayContent.filter((c) => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
-      : displayContent;
+    const filtered = displayContent.filter((c) => {
+      const matchesSearch = !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = !activeCategory || c.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
 
     return (
       <div className="animate-fade-in">
@@ -116,7 +119,11 @@ const Dashboard = () => {
 
         <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
           {categories.map((cat) => (
-            <button key={cat} className="px-5 py-2 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors whitespace-nowrap">
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground'}`}
+            >
               {cat}
             </button>
           ))}
