@@ -178,7 +178,10 @@ const Admin = () => {
   };
 
   const saveContent = async () => {
-    if (!contentForm.title || !contentForm.stream_url) return;
+    if (!contentForm.title || !contentForm.stream_url) {
+      toast({ title: "Preencha os campos obrigatórios", description: "Título e URL de streaming são obrigatórios.", variant: "destructive" });
+      return;
+    }
     const tableName = tableMap[activeSection];
     if (!tableName) return;
 
@@ -545,13 +548,13 @@ const Admin = () => {
 
       {/* Content Form Dialog */}
       <Dialog open={contentFormOpen} onOpenChange={setContentFormOpen}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-display">
               {editingContent ? "Editar Conteúdo" : "Adicionar Conteúdo"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Título</label>
               <Input placeholder="Nome do conteúdo" value={contentForm.title} onChange={(e) => setContentForm((f) => ({ ...f, title: e.target.value }))} />
