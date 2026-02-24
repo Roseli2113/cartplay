@@ -152,10 +152,17 @@ const VideoPlayer = ({ title, category, streamUrl, onClose }: VideoPlayerProps) 
     >
       {/* Video area */}
       <div className="flex-1 relative overflow-hidden">
+        {/* Scaled-up iframe hides YouTube overlays (related videos, title, logo) by cropping edges */}
         <div
           ref={videoContainerRef}
-          className="absolute inset-0 w-full h-full [&>div]:w-full [&>div]:h-full [&>iframe]:w-full [&>iframe]:h-full"
-          style={{ pointerEvents: "none" }}
+          className="absolute w-full h-full [&>div]:w-full [&>div]:h-full [&>iframe]:w-full [&>iframe]:h-full"
+          style={{
+            pointerEvents: "none",
+            top: "-5%",
+            left: "-5%",
+            width: "110%",
+            height: "110%",
+          }}
         />
 
         <PlayerOverlay
