@@ -455,7 +455,7 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         {/* Banner/Trailer Hero */}
         {banner && (banner.banner_url || banner.trailer_url) && activeSection === "home" && !playingContent && (
-          <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted" onContextMenu={(e) => e.preventDefault()}>
+          <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted" style={{ clipPath: "inset(0 round 1rem)" }} onContextMenu={(e) => e.preventDefault()}>
             {banner.trailer_url ? (
               <>
                 <iframe
@@ -466,7 +466,7 @@ const Dashboard = () => {
                   allow="autoplay; encrypted-media"
                   title="Trailer em destaque"
                 />
-                {/* Invisible overlay blocks all YouTube interactions */}
+                {/* Solid overlay blocks all YouTube interactions and hides any text fallback */}
                 <div className="absolute inset-0 z-[5]" />
               </>
             ) : banner.banner_url ? (
