@@ -420,16 +420,20 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         {/* Banner/Trailer Hero */}
         {banner && (banner.banner_url || banner.trailer_url) && activeSection === "home" && (
-          <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted">
+          <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted" onContextMenu={(e) => e.preventDefault()}>
             {banner.trailer_url ? (
-              <iframe
-                key={`trailer-${trailerMuted}`}
-                src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&mute=${trailerMuted ? 1 : 0}`}
-                className="absolute inset-0 w-full h-full"
-                style={{ border: 'none' }}
-                allow="autoplay; encrypted-media"
-                title="Banner trailer"
-              />
+              <>
+                <iframe
+                  key={`trailer-${trailerMuted}`}
+                  src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&mute=${trailerMuted ? 1 : 0}`}
+                  className="absolute"
+                  style={{ border: 'none', pointerEvents: 'none', top: '-5%', left: '-5%', width: '110%', height: '110%' }}
+                  allow="autoplay; encrypted-media"
+                  title=""
+                />
+                {/* Invisible overlay blocks all YouTube interactions */}
+                <div className="absolute inset-0 z-[5]" />
+              </>
             ) : banner.banner_url ? (
               <img src={banner.banner_url} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
             ) : null}
