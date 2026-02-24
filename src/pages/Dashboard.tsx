@@ -7,7 +7,7 @@ import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
   Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft, Volume2, VolumeX,
 } from "lucide-react";
-import YouTubePlayer from "@/components/YouTubePlayer";
+import VideoPlayer from "@/components/player/VideoPlayer";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -600,7 +600,7 @@ const Dashboard = () => {
 
       {/* Fullscreen Video Player */}
       {playingContent && playingContent.stream_url && (
-        <YouTubePlayer
+        <VideoPlayer
           title={playingContent.title}
           category={playingContent.category}
           streamUrl={playingContent.stream_url}
