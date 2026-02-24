@@ -66,6 +66,8 @@ const YouTubePlayer = ({ title, category, streamUrl, onClose }: YouTubePlayerPro
   const [currentTime, setCurrentTime] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const videoId = extractVideoId(streamUrl);
@@ -273,6 +275,33 @@ const YouTubePlayer = ({ title, category, streamUrl, onClose }: YouTubePlayerPro
           </div>
 
           <div className="flex-1" />
+
+          {/* Speed control */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+              className="h-10 px-2 flex items-center justify-center text-white hover:text-primary transition-colors touch-manipulation text-xs font-semibold"
+            >
+              {playbackRate}x
+            </button>
+            {showSpeedMenu && (
+              <div className="absolute bottom-12 right-0 bg-black/90 rounded-lg border border-white/10 py-1 min-w-[80px]">
+                {[0.5, 1, 1.5, 2].map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => {
+                      setPlaybackRate(rate);
+                      playerRef.current?.setPlaybackRate?.(rate);
+                      setShowSpeedMenu(false);
+                    }}
+                    className={`w-full px-3 py-1.5 text-xs text-left hover:bg-white/10 transition-colors ${playbackRate === rate ? 'text-primary font-bold' : 'text-white'}`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button onClick={toggleFullscreen} className="w-10 h-10 flex items-center justify-center text-white hover:text-primary transition-colors touch-manipulation">
             {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
