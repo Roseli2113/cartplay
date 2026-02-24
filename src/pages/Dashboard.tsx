@@ -58,8 +58,24 @@ const Dashboard = () => {
 
   // Map sidebar sections to category filters
   const sectionToCategoryMap: Record<string, string | null> = {
+    catalog: null,
     live: "Canais",
   };
+
+  // Map sidebar sections that filter by category and show main content
+  const sectionToCategoryFilterMap: Record<string, string> = {
+    live: "Canais",
+  };
+
+  // Fetch active banner
+  const [banner, setBanner] = useState<{ title: string; description: string; banner_url: string; trailer_url: string } | null>(null);
+  useEffect(() => {
+    const fetchBanner = async () => {
+      const { data } = await supabase.from("dashboard_banner" as any).select("*").eq("is_active", true).limit(1);
+      if (data && data.length > 0) setBanner(data[0] as any);
+    };
+    fetchBanner();
+  }, []);
 
   useEffect(() => {
     if (activeSection in sectionToCategoryMap) {
@@ -115,6 +131,28 @@ const Dashboard = () => {
 
     return (
       <div className="animate-fade-in">
+        {/* Banner/Trailer Hero */}
+        {banner && (banner.banner_url || banner.trailer_url) && (
+          <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted">
+            {banner.trailer_url ? (
+              <iframe
+                src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0`}
+                className="absolute inset-0 w-full h-full"
+                style={{ border: 'none' }}
+                allow="autoplay; encrypted-media"
+                title="Banner trailer"
+              />
+            ) : banner.banner_url ? (
+              <img src={banner.banner_url} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
+            ) : null}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 p-6">
+              <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{banner.title}</h2>
+              {banner.description && <p className="text-white/70 mt-1 max-w-lg text-sm">{banner.description}</p>}
+            </div>
+          </div>
+        )}
+
         <h2 className="text-2xl font-display font-bold mb-1">Olá, {profile?.name || "bem-vindo"}! 👋</h2>
         <p className="text-muted-foreground mb-4">O que você quer assistir hoje?</p>
 
