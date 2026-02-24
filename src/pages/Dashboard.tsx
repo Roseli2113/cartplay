@@ -259,16 +259,14 @@ const Dashboard = () => {
           </div>
           <div className="flex-1 relative overflow-hidden">
             <iframe
-              src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=0&controls=1&autoplay=1`}
+              src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=1&controls=1&autoplay=1`}
               className="absolute inset-0 w-full h-full"
-              style={{ border: 'none' }}
+              style={{ border: 'none', width: '100vw', height: '100%' }}
               allowFullScreen
               allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               title={playingContent.title}
             />
-            {/* Gradient overlay on top to subtly hide YouTube title bar on hover */}
             <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
-            {/* Small overlay to hide YouTube bottom-right logo */}
             <div className="absolute bottom-0 right-0 w-28 h-9 bg-gradient-to-tl from-black via-black/80 to-transparent z-10 pointer-events-none" />
           </div>
         </div>
