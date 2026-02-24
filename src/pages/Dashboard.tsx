@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
-  Flame, Tv, QrCode, ChevronRight, Shield, Search,
+  Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const categories = ["Filmes", "Séries", "Desenhos", "Canais", "Futebol"];
 
@@ -28,15 +29,28 @@ interface ContentCard {
   stream_url?: string;
 }
 
+interface FavoriteItem {
+  id: string;
+  content_id: string;
+  content_table: string;
+  title: string;
+  category: string;
+  thumbnail_url: string;
+  stream_url: string;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { signOut, profile, isAdmin } = useAuth();
+  const { signOut, profile, isAdmin, user } = useAuth();
+  const { toast } = useToast();
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [content, setContent] = useState<ContentCard[]>([]);
   const [playingContent, setPlayingContent] = useState<ContentCard | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -51,21 +65,62 @@ const Dashboard = () => {
     fetchContent();
   }, []);
 
+  // Fetch favorites
+  const fetchFavorites = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase.from("favorites" as any).select("*").order("created_at", { ascending: false });
+    if (data) {
+      const favs = data as unknown as FavoriteItem[];
+      setFavorites(favs);
+      setFavoriteIds(new Set(favs.map(f => f.content_id)));
+    }
+  }, [user]);
+
+  useEffect(() => { fetchFavorites(); }, [fetchFavorites]);
+
+  const toggleFavorite = async (card: ContentCard) => {
+    if (!user) return;
+    if (favoriteIds.has(card.id)) {
+      // Remove
+      await supabase.from("favorites" as any).delete().eq("user_id", user.id).eq("content_id", card.id);
+      toast({ title: "Removido dos favoritos" });
+    } else {
+      // Add - determine table from category
+      const tableForCategory: Record<string, string> = {
+        "Filmes": "movies", "Séries": "series", "Desenhos": "cartoons",
+        "Canais": "live_channels", "Futebol": "football_channels",
+      };
+      await supabase.from("favorites" as any).insert({
+        user_id: user.id,
+        content_id: card.id,
+        content_table: tableForCategory[card.category] || "movies",
+        title: card.title,
+        category: card.category || "",
+        thumbnail_url: card.thumbnail_url || "",
+        stream_url: card.stream_url || "",
+      });
+      toast({ title: "Adicionado aos favoritos ❤️" });
+    }
+    fetchFavorites();
+  };
+
   const handleLogout = async () => {
     await signOut();
     navigate("/");
   };
 
-  // Map sidebar sections to category filters
-  const sectionToCategoryMap: Record<string, string | null> = {
-    catalog: null,
-    live: "Canais",
-  };
-
-  // Map sidebar sections that filter by category and show main content
-  const sectionToCategoryFilterMap: Record<string, string> = {
-    live: "Canais",
-  };
+  // Sidebar section → category mapping
+  useEffect(() => {
+    const map: Record<string, string | null> = {
+      home: null,
+      catalog: null,
+      live: "Canais",
+    };
+    if (activeSection in map) {
+      setActiveCategory(map[activeSection]);
+    }
+    // Don't reset category for favorites/continue/tv-app/profile
+  }, [activeSection]);
 
   // Fetch active banner
   const [banner, setBanner] = useState<{ title: string; description: string; banner_url: string; trailer_url: string } | null>(null);
@@ -77,13 +132,87 @@ const Dashboard = () => {
     fetchBanner();
   }, []);
 
-  useEffect(() => {
-    if (activeSection in sectionToCategoryMap) {
-      setActiveCategory(sectionToCategoryMap[activeSection]);
-    } else {
-      setActiveCategory(null);
-    }
-  }, [activeSection]);
+  // Content card component
+  const ContentCardEl = ({ card, showFavBtn = true }: { card: ContentCard; showFavBtn?: boolean }) => (
+    <div className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation relative">
+      <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => setPlayingContent(card)}>
+        {card.thumbnail_url ? (
+          <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
+        ) : (
+          <Film className="w-10 h-10 text-muted-foreground/30" />
+        )}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+          <Play className="w-10 h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current drop-shadow-lg" />
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
+          <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
+          <span className="text-[10px] text-white/60">{card.category}</span>
+        </div>
+      </div>
+      {showFavBtn && (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleFavorite(card); }}
+          className="absolute top-1.5 right-1.5 z-10 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors touch-manipulation"
+        >
+          <Heart className={`w-4 h-4 ${favoriteIds.has(card.id) ? 'text-red-500 fill-red-500' : 'text-white/70'}`} />
+        </button>
+      )}
+    </div>
+  );
+
+  const renderFavorites = () => (
+    <div className="animate-fade-in">
+      <h2 className="text-2xl font-display font-bold mb-1">Meus Favoritos ❤️</h2>
+      <p className="text-muted-foreground mb-6">{favorites.length} conteúdos salvos</p>
+      {favorites.length === 0 ? (
+        <div className="text-center py-16">
+          <HeartOff className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-muted-foreground">Você ainda não tem favoritos.</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">Toque no ❤️ nos cards para salvar.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+          {favorites.map((fav) => (
+            <ContentCardEl key={fav.id} card={{ id: fav.content_id, title: fav.title, category: fav.category, thumbnail_url: fav.thumbnail_url, stream_url: fav.stream_url }} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderContinueWatching = () => {
+    const displayContent: ContentCard[] = content.length > 0 ? content : Array.from({ length: 6 }, (_, i) => ({
+      id: String(i),
+      title: [`Ação Total`, `Aventura Épica`, `Drama Intenso`, `Comédia Leve`, `Terror Sombrio`, `Ficção Científica`][i],
+      category: categories[i % 4],
+    }));
+
+    return (
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-display font-bold mb-1">Continuar Assistindo</h2>
+        <p className="text-muted-foreground mb-6">Retome de onde parou.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+          {displayContent.slice(0, 6).map((card, i) => (
+            <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
+              <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
+                {card.thumbnail_url ? (
+                  <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
+                ) : (
+                  <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
+                  <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
+                  <div className="w-full bg-white/20 rounded-full h-1 mt-1.5">
+                    <div className="bg-primary h-1 rounded-full" style={{ width: `${30 + i * 12}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const renderContent = () => {
     if (activeSection === "tv-app") {
@@ -117,6 +246,10 @@ const Dashboard = () => {
       );
     }
 
+    if (activeSection === "favorites") return renderFavorites();
+    if (activeSection === "continue") return renderContinueWatching();
+
+    // Home / Catalog / Live — main content with filters
     const displayContent: ContentCard[] = content.length > 0 ? content : Array.from({ length: 6 }, (_, i) => ({
       id: String(i),
       title: [`Ação Total`, `Aventura Épica`, `Drama Intenso`, `Comédia Leve`, `Terror Sombrio`, `Ficção Científica`][i],
@@ -132,7 +265,7 @@ const Dashboard = () => {
     return (
       <div className="animate-fade-in">
         {/* Banner/Trailer Hero */}
-        {banner && (banner.banner_url || banner.trailer_url) && (
+        {banner && (banner.banner_url || banner.trailer_url) && activeSection === "home" && (
           <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted">
             {banner.trailer_url ? (
               <iframe
@@ -153,10 +286,14 @@ const Dashboard = () => {
           </div>
         )}
 
-        <h2 className="text-2xl font-display font-bold mb-1">Olá, {profile?.name || "bem-vindo"}! 👋</h2>
-        <p className="text-muted-foreground mb-4">O que você quer assistir hoje?</p>
+        <h2 className="text-2xl font-display font-bold mb-1">
+          {activeSection === "catalog" ? "Catálogo Completo" : activeSection === "live" ? "Canais ao Vivo" : `Olá, ${profile?.name || "bem-vindo"}! 👋`}
+        </h2>
+        <p className="text-muted-foreground mb-4">
+          {activeSection === "catalog" ? "Explore todo o nosso conteúdo." : activeSection === "live" ? "Assista aos canais ao vivo." : "O que você quer assistir hoje?"}
+        </p>
 
-        {/* Barra de pesquisa */}
+        {/* Search */}
         <div className="relative mb-6 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -168,6 +305,7 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* Category filters */}
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2 -mx-4 px-4">
           {categories.map((cat) => (
             <button
@@ -180,33 +318,15 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Cards formato poster/story vertical */}
+        {/* Content grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
           {filtered.map((card) => (
-            <div
-              key={card.id}
-              onClick={() => setPlayingContent(card)}
-              className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation"
-            >
-              <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
-                {card.thumbnail_url ? (
-                  <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
-                ) : (
-                  <Film className="w-10 h-10 text-muted-foreground/30" />
-                )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                  <Play className="w-10 h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current drop-shadow-lg" />
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
-                  <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
-                  <span className="text-[10px] text-white/60">{card.category}</span>
-                </div>
-              </div>
-            </div>
+            <ContentCardEl key={card.id} card={card} />
           ))}
         </div>
 
-        {!searchQuery && (
+        {/* Continue watching section on home */}
+        {activeSection === "home" && !searchQuery && !activeCategory && (
           <>
             <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
               Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -296,6 +416,7 @@ const Dashboard = () => {
           {renderContent()}
         </div>
       </main>
+
       {/* Fullscreen Video Player */}
       {playingContent && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col">
