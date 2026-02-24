@@ -10,13 +10,13 @@ const LandingHeader = () => {
           <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shadow-glow">
             <Play className="w-5 h-5 text-primary-foreground fill-current" />
           </div>
-          <span className="text-xl font-display font-bold text-foreground">StreamMax</span>
+          <span className="text-xl font-display font-bold text-foreground">CartPlay</span>
         </Link>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" asChild>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+          <Button variant="ghost" size="sm" asChild>
             <Link to="/login">Entrar</Link>
           </Button>
-          <Button variant="hero" size="sm" asChild>
+          <Button variant="hero" size="sm" asChild className="whitespace-nowrap">
             <Link to="/register">Criar Conta</Link>
           </Button>
         </div>

@@ -565,7 +565,7 @@ const Dashboard = () => {
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <Play className="w-4 h-4 text-primary-foreground fill-current" />
           </div>
-          <span className="font-display font-bold text-foreground">StreamMax</span>
+          <span className="font-display font-bold text-foreground">CartPlay</span>
           <button className="ml-auto lg:hidden text-muted-foreground" onClick={() => setSidebarOpen(false)}>
             <X className="w-5 h-5" />
           </button>

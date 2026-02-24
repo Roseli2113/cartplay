@@ -42,7 +42,7 @@ const Register = () => {
           <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shadow-glow">
             <Play className="w-5 h-5 text-primary-foreground fill-current" />
           </div>
-          <span className="text-2xl font-display font-bold text-foreground">StreamMax</span>
+          <span className="text-2xl font-display font-bold text-foreground">CartPlay</span>
         </Link>
 
         <div className="bg-card border border-border rounded-2xl p-8 shadow-card">
