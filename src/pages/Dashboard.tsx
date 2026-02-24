@@ -8,11 +8,40 @@ import {
   Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft, Volume2, VolumeX,
 } from "lucide-react";
 import VideoPlayer from "@/components/player/VideoPlayer";
+import { extractVideoId } from "@/components/player/YouTubeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const categories = ["Filmes", "Séries", "Desenhos", "Canais", "Futebol"];
+
+const getTrailerEmbedSrc = (trailerUrl: string, isMuted: boolean) => {
+  const videoId = extractVideoId(trailerUrl);
+
+  if (videoId) {
+    const params = new URLSearchParams({
+      autoplay: "1",
+      mute: isMuted ? "1" : "0",
+      controls: "0",
+      rel: "0",
+      modestbranding: "1",
+      showinfo: "0",
+      fs: "0",
+      iv_load_policy: "3",
+      disablekb: "1",
+      playsinline: "1",
+      loop: "1",
+      playlist: videoId,
+      enablejsapi: "1",
+      origin: window.location.origin,
+    });
+
+    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+  }
+
+  const separator = trailerUrl.includes("?") ? "&" : "?";
+  return `${trailerUrl}${separator}autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&rel=0&modestbranding=1&showinfo=0&fs=0&iv_load_policy=3&disablekb=1&playsinline=1&loop=1`;
+};
 
 const menuItems = [
   { icon: Home, label: "Início", id: "home" },
@@ -425,11 +454,11 @@ const Dashboard = () => {
               <>
                 <iframe
                   key={`trailer-${trailerMuted}`}
-                  src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&fs=0&disablekb=1&playsinline=1&mute=${trailerMuted ? 1 : 0}`}
+                  src={getTrailerEmbedSrc(banner.trailer_url, trailerMuted)}
                   className="absolute"
-                  style={{ border: 'none', pointerEvents: 'none', top: '-5%', left: '-5%', width: '110%', height: '110%' }}
+                  style={{ border: "none", pointerEvents: "none", top: "-10%", left: "-10%", width: "120%", height: "120%" }}
                   allow="autoplay; encrypted-media"
-                  title=""
+                  title="Trailer em destaque"
                 />
                 {/* Invisible overlay blocks all YouTube interactions */}
                 <div className="absolute inset-0 z-[5]" />
