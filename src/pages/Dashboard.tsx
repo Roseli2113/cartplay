@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
   Flame, Tv, QrCode, ChevronRight, Shield,
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [content, setContent] = useState<ContentCard[]>([]);
+  const [playingContent, setPlayingContent] = useState<ContentCard | null>(null);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -106,7 +108,7 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {displayContent.map((card) => (
-            <div key={card.id} className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer">
+            <div key={card.id} onClick={() => card.stream_url && setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer">
               <div className="aspect-video bg-muted/50 flex items-center justify-center relative overflow-hidden">
                 {card.thumbnail_url ? (
                   <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
@@ -130,7 +132,7 @@ const Dashboard = () => {
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {displayContent.slice(0, 4).map((card, i) => (
-            <div key={`continue-${card.id}`} className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
+            <div key={`continue-${card.id}`} onClick={() => card.stream_url && setPlayingContent(card)} className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
               <div className="aspect-video bg-muted/50 flex items-center justify-center">
                 {card.thumbnail_url ? (
                   <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
@@ -211,6 +213,28 @@ const Dashboard = () => {
           {renderContent()}
         </div>
       </main>
+      {/* Video Player Dialog */}
+      <Dialog open={!!playingContent} onOpenChange={(open) => !open && setPlayingContent(null)}>
+        <DialogContent className="bg-black border-border max-w-4xl p-0 overflow-hidden">
+          {playingContent && (
+            <div className="w-full">
+              <div className="p-4 bg-card">
+                <h2 className="font-display font-semibold text-lg">{playingContent.title}</h2>
+                <span className="text-xs text-muted-foreground">{playingContent.category}</span>
+              </div>
+              <div className="aspect-video w-full bg-black">
+                <iframe
+                  src={playingContent.stream_url}
+                  className="w-full h-full"
+                  allowFullScreen
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  title={playingContent.title}
+                />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
