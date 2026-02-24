@@ -185,11 +185,12 @@ const Admin = () => {
     payment_link: string;
     is_popular: boolean;
     sort_order: number;
+    cta_text: string;
   }
   const [plansList, setPlansList] = useState<PlanItem[]>([]);
   const [editingPlan, setEditingPlan] = useState<PlanItem | null>(null);
   const [planFormOpen, setPlanFormOpen] = useState(false);
-  const [planForm, setPlanForm] = useState({ name: "", price: "", period: "", features: "", payment_link: "", is_popular: false });
+  const [planForm, setPlanForm] = useState({ name: "", price: "", period: "", features: "", payment_link: "", is_popular: false, cta_text: "" });
 
   // Fetch banner
   const fetchBanner = useCallback(async () => {
@@ -339,6 +340,7 @@ const Admin = () => {
       features: plan.features.join("\n"),
       payment_link: plan.payment_link || "",
       is_popular: plan.is_popular,
+      cta_text: plan.cta_text || "Assinar agora",
     });
     setPlanFormOpen(true);
   };
@@ -353,6 +355,7 @@ const Admin = () => {
       features: featuresArr,
       payment_link: planForm.payment_link,
       is_popular: planForm.is_popular,
+      cta_text: planForm.cta_text,
     } as any).eq("id", editingPlan.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -1131,7 +1134,12 @@ const Admin = () => {
             <div>
               <label className="text-sm font-medium mb-1.5 block">Link de Pagamento</label>
               <Input placeholder="https://pay.exemplo.com/checkout/..." value={planForm.payment_link} onChange={e => setPlanForm(f => ({ ...f, payment_link: e.target.value }))} />
-              <p className="text-xs text-muted-foreground mt-1">Ao clicar em "Assinar", o usuário será redirecionado para este link.</p>
+              <p className="text-xs text-muted-foreground mt-1">Ao clicar no botão, o usuário será redirecionado para este link.</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Texto do Botão (CTA)</label>
+              <Input placeholder="Ex: Assinar Mensal" value={planForm.cta_text} onChange={e => setPlanForm(f => ({ ...f, cta_text: e.target.value }))} />
+              <p className="text-xs text-muted-foreground mt-1">Texto exibido no botão de ação na Home e na página de Assinatura.</p>
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Recursos (um por linha)</label>

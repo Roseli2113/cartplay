@@ -317,6 +317,7 @@ export type Database = {
       subscription_plans: {
         Row: {
           created_at: string
+          cta_text: string
           features: string[]
           id: string
           is_popular: boolean
@@ -330,6 +331,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cta_text?: string
           features?: string[]
           id?: string
           is_popular?: boolean
@@ -343,6 +345,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cta_text?: string
           features?: string[]
           id?: string
           is_popular?: boolean

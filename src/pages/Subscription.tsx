@@ -85,12 +85,12 @@ const Subscription = () => {
                   {plan.payment_link ? (
                     <Button variant={variant as any} size="lg" className="w-full" asChild>
                       <a href={plan.payment_link} target="_blank" rel="noopener noreferrer">
-                        {plan.slug === "trial" ? "Começar teste grátis" : `Assinar ${plan.name.toLowerCase()}`}
+                        {plan.cta_text || (plan.slug === "trial" ? "Começar teste grátis" : `Assinar ${plan.name.toLowerCase()}`)}
                       </a>
                     </Button>
                   ) : (
                     <Button variant={variant as any} size="lg" className="w-full">
-                      {plan.slug === "trial" ? "Começar teste grátis" : `Assinar ${plan.name.toLowerCase()}`}
+                      {plan.cta_text || (plan.slug === "trial" ? "Começar teste grátis" : `Assinar ${plan.name.toLowerCase()}`)}
                     </Button>
                   )}
                 </div>
