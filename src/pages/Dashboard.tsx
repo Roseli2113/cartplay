@@ -550,14 +550,17 @@ const Dashboard = () => {
           </div>
           <div className="flex-1 relative overflow-hidden">
             {playingContent.stream_url ? (
-              <iframe
-                src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=1&controls=1&autoplay=1&playsinline=1`}
-                className="absolute inset-0 w-full h-full"
-                style={{ border: 'none', width: '100vw', height: '100vh' }}
-                allowFullScreen
-                allow="autoplay; encrypted-media; picture-in-picture; fullscreen; accelerometer; gyroscope"
-                title={playingContent.title}
-              />
+              <>
+                <iframe
+                  src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=0&controls=0&autoplay=1&playsinline=1`}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ border: 'none', width: '100vw', height: '100vh', pointerEvents: 'none' }}
+                  allow="autoplay; encrypted-media; accelerometer; gyroscope"
+                  title={playingContent.title}
+                />
+                {/* Transparent overlay to block all YouTube clicks */}
+                <div className="absolute inset-0 z-20" />
+              </>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-white/60">
                 <p className="text-sm">Nenhuma URL de streaming disponível</p>
