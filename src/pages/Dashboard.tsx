@@ -7,6 +7,7 @@ import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
   Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2,
 } from "lucide-react";
+import YouTubePlayer from "@/components/YouTubePlayer";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -534,42 +535,13 @@ const Dashboard = () => {
       </main>
 
       {/* Fullscreen Video Player */}
-      {playingContent && (
-        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-          <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-black/80 backdrop-blur-sm safe-area-top">
-            <div className="min-w-0 flex-1 mr-3">
-              <h2 className="font-display font-semibold text-white text-sm sm:text-lg truncate">{playingContent.title}</h2>
-              <span className="text-[10px] sm:text-xs text-white/60">{playingContent.category}</span>
-            </div>
-            <button
-              onClick={() => setPlayingContent(null)}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation"
-            >
-              <X className="w-5 h-5 text-white" />
-            </button>
-          </div>
-          <div className="flex-1 relative overflow-hidden">
-            {playingContent.stream_url ? (
-              <>
-                <iframe
-                  src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=0&controls=0&autoplay=1&playsinline=1`}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ border: 'none', width: '100vw', height: '100vh', pointerEvents: 'none' }}
-                  allow="autoplay; encrypted-media; accelerometer; gyroscope"
-                  title={playingContent.title}
-                />
-                {/* Transparent overlay to block all YouTube clicks */}
-                <div className="absolute inset-0 z-20" />
-              </>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-white/60">
-                <p className="text-sm">Nenhuma URL de streaming disponível</p>
-              </div>
-            )}
-            <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-24 h-8 bg-gradient-to-tl from-black via-black/80 to-transparent z-10 pointer-events-none" />
-          </div>
-        </div>
+      {playingContent && playingContent.stream_url && (
+        <YouTubePlayer
+          title={playingContent.title}
+          category={playingContent.category}
+          streamUrl={playingContent.stream_url}
+          onClose={() => setPlayingContent(null)}
+        />
       )}
     </div>
   );
