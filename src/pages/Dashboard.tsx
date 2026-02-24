@@ -176,7 +176,7 @@ const Dashboard = () => {
   // Content card component
   const ContentCardEl = ({ card, showFavBtn = true }: { card: ContentCard; showFavBtn?: boolean }) => (
     <div className="group bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation relative">
-      <div className="aspect-[3/4] sm:aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => setPlayingContent(card)}>
+      <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => setPlayingContent(card)}>
         {card.thumbnail_url ? (
           <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
         ) : (
