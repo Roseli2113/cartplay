@@ -445,7 +445,8 @@ const Dashboard = () => {
     }));
 
     const filtered = displayContent.filter((c) => {
-      const matchesSearch = !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || c.title.toLowerCase().includes(query) || (c.category && c.category.toLowerCase().includes(query));
       const matchesCategory = !activeCategory || c.category === activeCategory;
       return matchesSearch && matchesCategory;
     });
