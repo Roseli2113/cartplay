@@ -162,6 +162,44 @@ Deno.serve(async (req) => {
     }
 
 
+    // Helper: find existing pending transaction for this email to update instead of duplicating
+    const findPendingTransaction = async () => {
+      if (!email) return null;
+      const { data } = await supabase
+        .from("payment_transactions")
+        .select("id")
+        .eq("email", email)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    };
+
+    // Helper: upsert transaction — update existing pending row or insert new
+    const upsertTransaction = async (status: string, eventName: string) => {
+      const existing = await findPendingTransaction();
+      if (existing && status !== "pending") {
+        // Update the existing pending row
+        await supabase
+          .from("payment_transactions")
+          .update({
+            event: eventName,
+            status,
+            payload: body,
+            user_id: targetUserId,
+            plan: selectedPlan,
+          })
+          .eq("id", existing.id);
+      } else if (!existing || status === "pending") {
+        // Insert only if no pending row exists yet (or it's a new pending)
+        if (status === "pending" && existing) return; // already has a pending row, skip duplicate
+        await supabase.from("payment_transactions").insert({
+          user_id: targetUserId, email, event: eventName, plan: selectedPlan, status, payload: body,
+        });
+      }
+    };
+
     if (isPaid) {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -184,9 +222,7 @@ Deno.serve(async (req) => {
           .eq("user_id", targetUserId);
 
         if (error) {
-          await supabase.from("payment_transactions").insert({
-            user_id: targetUserId, email, event, plan: selectedPlan, status: "failed", payload: body,
-          });
+          await upsertTransaction("failed", String(event));
           return new Response(
             JSON.stringify({ error: error.message }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -203,9 +239,7 @@ Deno.serve(async (req) => {
         });
 
         if (error) {
-          await supabase.from("payment_transactions").insert({
-            user_id: targetUserId, email, event, plan: selectedPlan, status: "failed", payload: body,
-          });
+          await upsertTransaction("failed", String(event));
           return new Response(
             JSON.stringify({ error: error.message }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -213,10 +247,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Log successful payment
-      await supabase.from("payment_transactions").insert({
-        user_id: targetUserId, email, event, plan: selectedPlan, status: "paid", payload: body,
-      });
+      await upsertTransaction("paid", String(event));
 
       return new Response(
         JSON.stringify({
@@ -235,9 +266,7 @@ Deno.serve(async (req) => {
         .update({ status: "inactive" })
         .eq("user_id", targetUserId);
 
-      await supabase.from("payment_transactions").insert({
-        user_id: targetUserId, email, event: String(event), plan: selectedPlan, status: "refused", payload: body,
-      });
+      await upsertTransaction("refused", String(event));
 
       return new Response(
         JSON.stringify({ success: true, message: "Subscription deactivated" }),
@@ -246,9 +275,7 @@ Deno.serve(async (req) => {
     }
 
     if (isPending) {
-      await supabase.from("payment_transactions").insert({
-        user_id: targetUserId, email, event: String(event), plan: selectedPlan, status: "pending", payload: body,
-      });
+      await upsertTransaction("pending", String(event));
 
       return new Response(
         JSON.stringify({ success: true, message: `Pending event '${event}' logged` }),
@@ -257,9 +284,7 @@ Deno.serve(async (req) => {
     }
 
     // Log unknown event
-    await supabase.from("payment_transactions").insert({
-      user_id: targetUserId, email, event: String(event), plan: selectedPlan, status: "pending", payload: body,
-    });
+    await upsertTransaction("pending", String(event));
 
     return new Response(
       JSON.stringify({ success: true, message: `Event '${event}' received and logged` }),
