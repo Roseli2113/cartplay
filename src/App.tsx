@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,11 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute adminOnly>
                 <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/subscription" element={
+              <ProtectedRoute>
+                <Subscription />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
