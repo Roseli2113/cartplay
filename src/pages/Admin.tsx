@@ -405,7 +405,7 @@ const Admin = () => {
   const renderContentManager = () => {
     const catInfo = contentCategories.find((c) => c.id === activeSection);
     return (
-      <div className="animate-fade-in space-y-6">
+      <div className="animate-fade-in space-y-6 min-w-0 w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-display font-bold mb-1">Gerenciar {catInfo?.label}</h2>
@@ -419,7 +419,40 @@ const Admin = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar conteúdo..." value={contentSearch} onChange={(e) => setContentSearch(e.target.value)} className="pl-10" />
         </div>
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
+
+        {/* Mobile: card list / Desktop: table */}
+        <div className="block sm:hidden space-y-3">
+          {filteredContent.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhum conteúdo encontrado.</p>
+          ) : (
+            filteredContent.map((item) => (
+              <div key={item.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+                <div className="w-12 h-16 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
+                  {item.thumbnail_url ? (
+                    <img src={item.thumbnail_url} alt={item.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center"><Film className="w-5 h-5 text-muted-foreground/30" /></div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-sm truncate">{item.title}</h4>
+                  <p className="text-[10px] text-muted-foreground truncate">{item.stream_url}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(item.created_at).toLocaleDateString("pt-BR")}</p>
+                </div>
+                <div className="flex flex-col gap-1 flex-shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContent(item)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteContentItem(item.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden sm:block bg-card border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -671,7 +704,7 @@ const Admin = () => {
         </div>
       </aside>
 
-      <main className="flex-1 min-h-screen">
+      <main className="flex-1 min-h-screen min-w-0 w-full overflow-x-hidden">
         <header className="h-16 border-b border-border flex items-center px-4 lg:px-8 sticky top-0 bg-background/80 backdrop-blur-md z-30">
           <button className="lg:hidden mr-4 text-muted-foreground" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
