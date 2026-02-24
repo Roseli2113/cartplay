@@ -152,8 +152,8 @@ const Index = () => {
                   ))}
                 </ul>
                 <Button variant={p.is_popular ? "hero" : "hero-outline"} className="w-full" size="lg" asChild>
-                  {p.payment_link ? (
-                    <a href={p.payment_link} target="_blank" rel="noopener noreferrer">{p.cta_text || "Assinar agora"}</a>
+                  {p.payment_link && p.payment_link.trim().length > 0 ? (
+                    <a href={p.payment_link.trim()} target="_blank" rel="noopener noreferrer">{p.cta_text || "Assinar agora"}</a>
                   ) : (
                     <Link to="/register">{p.cta_text || "Assinar agora"}</Link>
                   )}
