@@ -168,12 +168,12 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 -mx-4 px-4">
           {categories.map((cat) => (
             <button
               key={cat}
-              onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground'}`}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveCategory(activeCategory === cat ? null : cat); }}
+              className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 active:scale-95 touch-manipulation ${activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground'}`}
             >
               {cat}
             </button>
@@ -181,9 +181,13 @@ const Dashboard = () => {
         </div>
 
         {/* Cards formato poster/story vertical */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
           {filtered.map((card) => (
-            <div key={card.id} onClick={() => card.stream_url && setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer">
+            <div
+              key={card.id}
+              onClick={() => setPlayingContent(card)}
+              className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation"
+            >
               <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
                 {card.thumbnail_url ? (
                   <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
@@ -193,7 +197,6 @@ const Dashboard = () => {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
                   <Play className="w-10 h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current drop-shadow-lg" />
                 </div>
-                {/* Título sobre a imagem na parte inferior */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
                   <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
                   <span className="text-[10px] text-white/60">{card.category}</span>
@@ -208,9 +211,9 @@ const Dashboard = () => {
             <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
               Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
               {displayContent.slice(0, 6).map((card, i) => (
-                <div key={`continue-${card.id}`} onClick={() => card.stream_url && setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
+                <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
                   <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
                     {card.thumbnail_url ? (
                       <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
@@ -309,14 +312,20 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="flex-1 relative overflow-hidden">
-            <iframe
-              src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=1&controls=1&autoplay=1`}
-              className="absolute inset-0 w-full h-full"
-              style={{ border: 'none', width: '100vw', height: '100%' }}
-              allowFullScreen
-              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-              title={playingContent.title}
-            />
+            {playingContent.stream_url ? (
+              <iframe
+                src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=1&controls=1&autoplay=1&playsinline=1`}
+                className="absolute inset-0 w-full h-full"
+                style={{ border: 'none', width: '100vw', height: '100%' }}
+                allowFullScreen
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                title={playingContent.title}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-white/60">
+                <p>Nenhuma URL de streaming disponível</p>
+              </div>
+            )}
             <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-28 h-9 bg-gradient-to-tl from-black via-black/80 to-transparent z-10 pointer-events-none" />
           </div>
