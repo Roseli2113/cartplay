@@ -16,6 +16,7 @@ import {
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
   Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
   Monitor, BookOpen, Image, Wifi, Flame, CreditCard, UserPlus, Clock,
+  Link2, Copy, CheckCircle,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,6 +103,7 @@ const adminMenu = [
   { icon: Image, label: "Banner / Trailer", id: "banner" },
   { icon: CreditCard, label: "Assinaturas", id: "subscriptions" },
   { icon: UserPlus, label: "+ Admin", id: "add-admin" },
+  { icon: Link2, label: "Integração Pagamento", id: "payment-integration" },
   { icon: BookOpen, label: "Instruções TV App", id: "tv-instructions" },
 ];
 
@@ -145,6 +147,8 @@ const Admin = () => {
   // Admin management state
   const [adminEmail, setAdminEmail] = useState("");
   const [adminUsers, setAdminUsers] = useState<{ user_id: string; name: string; email: string }[]>([]);
+  const [webhookCopied, setWebhookCopied] = useState(false);
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-webhook`;
 
   // Fetch banner
   const fetchBanner = useCallback(async () => {
@@ -891,6 +895,97 @@ const Admin = () => {
     </div>
   );
 
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setWebhookCopied(true);
+    toast({ title: "URL copiada!" });
+    setTimeout(() => setWebhookCopied(false), 2000);
+  };
+
+  const renderPaymentIntegration = () => (
+    <div className="animate-fade-in space-y-6 max-w-3xl">
+      <div>
+        <h2 className="text-2xl font-display font-bold mb-1">Integração de Pagamento</h2>
+        <p className="text-muted-foreground text-sm">Configure sua plataforma de pagamento para ativar assinaturas automaticamente.</p>
+      </div>
+
+      <div className="bg-card border border-primary/20 rounded-xl p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Link2 className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-display font-semibold">URL do Webhook</h3>
+            <p className="text-xs text-muted-foreground">Cole esta URL na sua plataforma de pagamento (Mercado Pago, PagSeguro, Stripe, etc.)</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Input value={webhookUrl} readOnly className="font-mono text-xs bg-muted/50" />
+          <Button variant="outline" size="icon" onClick={copyWebhookUrl} className="flex-shrink-0">
+            {webhookCopied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h3 className="font-display font-semibold">Como funciona</h3>
+        <ol className="list-decimal list-inside space-y-3 text-sm text-muted-foreground">
+          <li>Copie a <strong className="text-foreground">URL do Webhook</strong> acima.</li>
+          <li>Na sua plataforma de pagamento, configure um <strong className="text-foreground">webhook/notificação</strong> apontando para esta URL.</li>
+          <li>Quando um pagamento for aprovado, a plataforma envia um evento para esta URL.</li>
+          <li>O sistema <strong className="text-foreground">ativa automaticamente</strong> a assinatura do usuário por <strong className="text-foreground">30 dias</strong>.</li>
+          <li>Após 30 dias, se nenhum novo pagamento for recebido, a assinatura é <strong className="text-foreground">pausada automaticamente</strong>.</li>
+        </ol>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h3 className="font-display font-semibold">Formato do Payload (JSON)</h3>
+        <p className="text-xs text-muted-foreground mb-2">O webhook aceita os seguintes formatos de evento:</p>
+        <div className="bg-muted/50 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+          <pre className="text-foreground">{`{
+  "event": "payment_approved",
+  "email": "usuario@email.com",
+  "plan": "monthly"
+}`}</pre>
+        </div>
+        <p className="text-xs text-muted-foreground">Ou usando o ID do usuário:</p>
+        <div className="bg-muted/50 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+          <pre className="text-foreground">{`{
+  "event": "payment_approved",
+  "user_id": "uuid-do-usuario",
+  "plan": "monthly"
+}`}</pre>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-3">
+        <h3 className="font-display font-semibold">Eventos aceitos</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+            <p className="font-medium text-sm text-emerald-400">✅ Pagamento Aprovado</p>
+            <p className="text-xs text-muted-foreground mt-1">Eventos: <code className="text-foreground">payment_approved</code>, <code className="text-foreground">paid</code></p>
+            <p className="text-xs text-muted-foreground">Ativa assinatura por 30 dias.</p>
+          </div>
+          <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
+            <p className="font-medium text-sm text-destructive">❌ Pagamento Recusado</p>
+            <p className="text-xs text-muted-foreground mt-1">Eventos: <code className="text-foreground">payment_refused</code>, <code className="text-foreground">refunded</code></p>
+            <p className="text-xs text-muted-foreground">Desativa assinatura imediatamente.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-3">
+        <h3 className="font-display font-semibold">Planos disponíveis</h3>
+        <p className="text-xs text-muted-foreground">Use o campo <code className="text-foreground">"plan"</code> com um destes valores:</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="px-3 py-1.5 bg-muted/50 rounded-full text-xs font-medium">monthly</span>
+          <span className="px-3 py-1.5 bg-muted/50 rounded-full text-xs font-medium">annual</span>
+          <span className="px-3 py-1.5 bg-muted/50 rounded-full text-xs font-medium">trial</span>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderTvInstructions = () => (
     <div className="animate-fade-in space-y-6 max-w-3xl">
       <div>
@@ -1020,6 +1115,7 @@ const Admin = () => {
           {activeSection === "tv-instructions" && renderTvInstructions()}
           {activeSection === "subscriptions" && renderSubscriptions()}
           {activeSection === "add-admin" && renderAddAdmin()}
+          {activeSection === "payment-integration" && renderPaymentIntegration()}
           {isContentSection && renderContentManager()}
         </div>
       </main>
