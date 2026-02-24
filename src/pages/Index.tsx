@@ -33,13 +33,13 @@ const Index = () => {
       <LandingHeader />
 
       {/* Hero */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-16">
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-28 md:pt-16">
         <div className="absolute inset-0">
           <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
         </div>
         <div className="relative z-10 container mx-auto px-4 text-center max-w-3xl animate-fade-in">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold leading-tight mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-bold leading-tight mb-6">
             Seus filmes e séries <span className="text-gradient">favoritos</span> em um só lugar
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
