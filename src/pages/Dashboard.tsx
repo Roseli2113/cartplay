@@ -626,7 +626,7 @@ const Dashboard = () => {
             {menuItems.find((m) => m.id === activeSection)?.label || "Início"}
           </h1>
         </header>
-        <div className="p-4 lg:p-8">
+        <div className="p-3 sm:p-4 lg:p-8 overflow-hidden">
           {renderContent()}
         </div>
       </main>
