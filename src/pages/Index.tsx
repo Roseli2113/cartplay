@@ -4,6 +4,12 @@ import LandingHeader from "@/components/LandingHeader";
 import heroBg from "@/assets/hero-bg.jpg";
 import dashboardPreview from "@/assets/dashboard-preview.png";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Play, Smartphone, Layers, Tv, RefreshCw,
   UserPlus, CreditCard, CheckCircle,
   Monitor, Flame, QrCode,
@@ -15,6 +21,14 @@ const benefits = [
   { icon: Layers, title: "Conteúdo Organizado", desc: "Filmes, séries, desenhos e canais organizados por categorias para você encontrar fácil." },
   { icon: Tv, title: "Compatível com Smart TVs", desc: "Apps dedicados para Android TV, Fire TV e outras plataformas de TV." },
   { icon: RefreshCw, title: "Atualizações Frequentes", desc: "Novos conteúdos adicionados toda semana para você nunca ficar sem opção." },
+];
+
+const faqs = [
+  { q: "Posso cancelar a qualquer momento?", a: "Sim! Não existe fidelidade. Você pode cancelar sua assinatura quando quiser, sem multas ou taxas extras." },
+  { q: "Em quais dispositivos posso assistir?", a: "Você pode assistir no celular, tablet, computador, Android TV, Fire TV e Smart TVs compatíveis." },
+  { q: "O conteúdo é atualizado com frequência?", a: "Sim! Novos filmes, séries, desenhos e canais são adicionados toda semana ao nosso catálogo." },
+  { q: "Como funciona o pagamento?", a: "Aceitamos diversas formas de pagamento. Após a confirmação, seu acesso é liberado imediatamente." },
+  { q: "Posso usar em mais de um dispositivo ao mesmo tempo?", a: "Depende do plano escolhido. Confira os detalhes de cada plano na seção de planos acima." },
 ];
 
 const steps = [
@@ -161,6 +175,26 @@ const Index = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-4">Perguntas Frequentes</h2>
+          <p className="text-muted-foreground text-center mb-10">Tire suas dúvidas sobre a CartPlay.</p>
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="border-border">
+                <AccordionTrigger className="text-left font-display font-semibold hover:text-primary transition-colors">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
