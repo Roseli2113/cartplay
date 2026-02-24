@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -76,8 +76,7 @@ interface FavoriteItem {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { signOut, profile, isAdmin, user } = useAuth();
+  const { signOut, profile, isAdmin, user, accessBlocked, accessReason, subscriptionPlan } = useAuth();
   const { toast } = useToast();
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -89,45 +88,11 @@ const Dashboard = () => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [trailerMuted, setTrailerMuted] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [subscriptionExpired, setSubscriptionExpired] = useState(false);
-  const [subscriptionPlan, setSubscriptionPlan] = useState<string | null>(null);
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
 
   // Track this user's online presence
   usePresenceTrack(user?.id);
-
-  // Check subscription expiry
-  useEffect(() => {
-    if (!user) return;
-    const checkSubscription = async () => {
-      const { data } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!data) return;
-      setSubscriptionPlan(data.plan);
-      
-      if (data.plan === "trial") {
-        // Check trial hours
-        const started = new Date(data.trial_started_at).getTime();
-        const elapsed = (Date.now() - started) / (1000 * 60 * 60);
-        if (elapsed >= data.trial_hours || data.status === "inactive") {
-          setSubscriptionExpired(true);
-        }
-      } else if (data.expires_at) {
-        // Check 30-day expiry for paid plans
-        const expiresAt = new Date(data.expires_at).getTime();
-        if (Date.now() > expiresAt || data.status === "inactive") {
-          setSubscriptionExpired(true);
-        }
-      } else if (data.status === "inactive") {
-        setSubscriptionExpired(true);
-      }
-    };
-    checkSubscription();
-  }, [user]);
 
   // Track section navigation for back button
   const handleSectionChange = (section: string) => {
@@ -189,7 +154,39 @@ const Dashboard = () => {
 
   useEffect(() => { fetchFavorites(); }, [fetchFavorites]);
 
+  const handleAccessBlockedAction = useCallback(() => {
+    const title = accessReason === "blocked" ? "Conta bloqueada" : "Acesso indisponível";
+    const description = accessReason === "blocked"
+      ? "Sua conta foi bloqueada pelo administrador."
+      : "Seu período de acesso terminou. Regularize o pagamento para continuar.";
+
+    toast({ title, description, variant: "destructive" });
+
+    if (accessReason === "blocked") {
+      navigate("/");
+      return;
+    }
+
+    navigate("/subscription");
+  }, [accessReason, navigate, toast]);
+
+  const startPlayback = useCallback((card: ContentCard) => {
+    if (accessBlocked) {
+      handleAccessBlockedAction();
+      return;
+    }
+
+    setPlayingContent(card);
+  }, [accessBlocked, handleAccessBlockedAction]);
+
+  useEffect(() => {
+    if (!accessBlocked || !playingContent) return;
+    setPlayingContent(null);
+    handleAccessBlockedAction();
+  }, [accessBlocked, handleAccessBlockedAction, playingContent]);
+
   const toggleFavorite = async (card: ContentCard) => {
+
     if (!user) return;
     if (favoriteIds.has(card.id)) {
       // Remove
@@ -246,7 +243,7 @@ const Dashboard = () => {
   // Content card component
   const ContentCardEl = ({ card, showFavBtn = true }: { card: ContentCard; showFavBtn?: boolean }) => (
     <div className="group w-full min-w-0 bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation relative">
-      <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => setPlayingContent(card)}>
+      <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => startPlayback(card)}>
         {card.thumbnail_url ? (
           <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
         ) : (
@@ -309,7 +306,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground mb-6">Retome de onde parou.</p>
         <div className="grid w-full min-w-0 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-3">
           {displayContent.slice(0, 6).map((card, i) => (
-            <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
+            <div key={`continue-${card.id}`} onClick={() => startPlayback(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
               <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
                 {card.thumbnail_url ? (
                   <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
@@ -686,29 +683,39 @@ const Dashboard = () => {
           </h1>
         </header>
         <div className="p-3 sm:p-4 lg:p-8 overflow-hidden">
-          {subscriptionExpired && (
+          {accessBlocked && (
             <div className="mb-6 bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 animate-fade-in">
               <div className="w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-destructive" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-display font-semibold text-sm text-destructive">
-                  {subscriptionPlan === "trial" ? "Período de teste expirado" : "Assinatura vencida"}
+                  {accessReason === "blocked"
+                    ? "Conta bloqueada"
+                    : subscriptionPlan === "trial" || accessReason === "trial_expired"
+                      ? "Período de teste expirado"
+                      : "Assinatura vencida"}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {subscriptionPlan === "trial"
-                    ? "Seu período de teste gratuito acabou. Assine um plano para continuar assistindo."
-                    : "Sua assinatura expirou. Renove para continuar com acesso completo ao catálogo."}
+                  {accessReason === "blocked"
+                    ? "Sua conta foi bloqueada pelo administrador."
+                    : subscriptionPlan === "trial" || accessReason === "trial_expired"
+                      ? "Seu período de teste gratuito acabou. Assine um plano para continuar assistindo."
+                      : "Sua assinatura expirou. Renove para continuar com acesso completo ao catálogo."}
                 </p>
               </div>
               <Button
                 variant="hero"
                 size="sm"
-                onClick={() => navigate("/subscription")}
+                onClick={() => navigate(accessReason === "blocked" ? "/" : "/subscription")}
                 className="flex-shrink-0 whitespace-nowrap"
               >
                 <CreditCard className="w-4 h-4 mr-1" />
-                {subscriptionPlan === "trial" ? "Assinar agora" : "Renovar assinatura"}
+                {accessReason === "blocked"
+                  ? "Ir para início"
+                  : subscriptionPlan === "trial" || accessReason === "trial_expired"
+                    ? "Assinar agora"
+                    : "Renovar assinatura"}
               </Button>
             </div>
           )}
