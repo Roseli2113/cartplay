@@ -15,8 +15,9 @@ import {
   Play, Home, Users, Film, Tv, Radio, Shield, LogOut, Menu, X,
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
   Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
-  Monitor, BookOpen, Image, Wifi, Flame,
+  Monitor, BookOpen, Image, Wifi, Flame, CreditCard, UserPlus, Clock,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +42,19 @@ interface ContentItem {
   thumbnail_url: string;
   category: string;
   created_at: string;
+}
+
+interface SubscriptionItem {
+  id: string;
+  user_id: string;
+  plan: string;
+  status: string;
+  trial_hours: number;
+  trial_started_at: string;
+  activated_at: string;
+  expires_at: string | null;
+  user_name?: string;
+  user_email?: string;
 }
 
 const tableMap: Record<string, string> = {
@@ -86,6 +100,8 @@ const adminMenu = [
   { icon: Tv, label: "Novidades", id: "novidades" },
   { icon: Monitor, label: "Doramas", id: "doramas" },
   { icon: Image, label: "Banner / Trailer", id: "banner" },
+  { icon: CreditCard, label: "Assinaturas", id: "subscriptions" },
+  { icon: UserPlus, label: "+ Admin", id: "add-admin" },
   { icon: BookOpen, label: "Instruções TV App", id: "tv-instructions" },
 ];
 
@@ -119,6 +135,16 @@ const Admin = () => {
   const [bannerId, setBannerId] = useState<string | null>(null);
   const [bannerUploading, setBannerUploading] = useState(false);
   const bannerFileRef = useRef<HTMLInputElement>(null);
+
+  // Subscription state
+  const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
+  const [subSearch, setSubSearch] = useState("");
+  const [extraHoursUserId, setExtraHoursUserId] = useState<string | null>(null);
+  const [extraHours, setExtraHours] = useState("");
+
+  // Admin management state
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminUsers, setAdminUsers] = useState<{ user_id: string; name: string; email: string }[]>([]);
 
   // Fetch banner
   const fetchBanner = useCallback(async () => {
@@ -159,7 +185,7 @@ const Admin = () => {
         email: p.email || "",
         phone: p.phone || "",
         created_at: p.created_at,
-        status: "active" as const, // We don't have a status field yet, default to active
+        status: "active" as const,
       })));
     }
   }, []);
@@ -170,7 +196,6 @@ const Admin = () => {
     if (!tableName) return;
     const cat = categoryForSection[activeSection];
     let query = supabase.from(tableName as any).select("*").order("created_at", { ascending: false });
-    // For sections that share a table (novos, novidades, doramas → movies), filter by category
     if (cat && ["novos", "novidades", "doramas"].includes(activeSection)) {
       query = query.eq("category", cat);
     }
@@ -178,10 +203,39 @@ const Admin = () => {
     if (data) setContent(data as unknown as ContentItem[]);
   }, [activeSection]);
 
+  // Fetch subscriptions
+  const fetchSubscriptions = useCallback(async () => {
+    const { data: subs } = await supabase.from("subscriptions" as any).select("*");
+    if (!subs) return;
+    // Merge with user profiles
+    const { data: profiles } = await supabase.from("profiles" as any).select("user_id, name, email");
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+    setSubscriptions((subs as any[]).map((s: any) => {
+      const p = profileMap.get(s.user_id) as any;
+      return { ...s, user_name: p?.name || "", user_email: p?.email || "" };
+    }));
+  }, []);
+
+  // Fetch admin users
+  const fetchAdminUsers = useCallback(async () => {
+    const { data: roles } = await supabase.from("user_roles" as any).select("user_id").eq("role", "admin");
+    if (!roles) return;
+    const adminIds = (roles as any[]).map((r: any) => r.user_id);
+    if (adminIds.length === 0) { setAdminUsers([]); return; }
+    const { data: profiles } = await supabase.from("profiles" as any).select("user_id, name, email").in("user_id", adminIds);
+    setAdminUsers((profiles || []).map((p: any) => ({ user_id: p.user_id, name: p.name, email: p.email })));
+  }, []);
+
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
   useEffect(() => {
     if (tableMap[activeSection]) fetchContent();
   }, [activeSection, fetchContent]);
+  useEffect(() => {
+    if (activeSection === "subscriptions") fetchSubscriptions();
+  }, [activeSection, fetchSubscriptions]);
+  useEffect(() => {
+    if (activeSection === "add-admin") fetchAdminUsers();
+  }, [activeSection, fetchAdminUsers]);
 
   // ── User Actions ──
   const filteredUsers = users.filter(
@@ -193,9 +247,6 @@ const Admin = () => {
 
   const deleteUser = async () => {
     if (!userToDelete) return;
-    const user = users.find(u => u.id === userToDelete);
-    if (!user) return;
-    
     const { error } = await supabase.from("profiles" as any).delete().eq("id", userToDelete);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -225,13 +276,10 @@ const Admin = () => {
   };
 
   const convertToEmbedUrl = (url: string): string => {
-    // youtube.com/watch?v=ID
     const watchMatch = url.match(/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/);
     if (watchMatch) return `https://www.youtube.com/embed/${watchMatch[1]}`;
-    // youtu.be/ID
     const shortMatch = url.match(/(?:youtu\.be\/)([a-zA-Z0-9_-]+)/);
     if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
-    // youtube.com/shorts/ID
     const shortsMatch = url.match(/(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]+)/);
     if (shortsMatch) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
     return url;
@@ -246,7 +294,6 @@ const Admin = () => {
     if (!tableName) return;
 
     const embedUrl = convertToEmbedUrl(contentForm.stream_url.trim());
-
     const cat = categoryForSection[activeSection] || "";
 
     if (editingContent) {
@@ -280,6 +327,80 @@ const Admin = () => {
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Conteúdo excluído" });
     fetchContent();
+  };
+
+  // ── Admin Actions ──
+  const addAdmin = async () => {
+    if (!adminEmail.trim()) return;
+    // Find user by email
+    const { data: profile } = await supabase.from("profiles" as any).select("user_id").eq("email", adminEmail.trim()).maybeSingle();
+    if (!profile) {
+      toast({ title: "Usuário não encontrado", description: "Nenhum usuário com esse email.", variant: "destructive" });
+      return;
+    }
+    const userId = (profile as any).user_id;
+    // Check if already admin
+    const { data: existing } = await supabase.from("user_roles" as any).select("id").eq("user_id", userId).eq("role", "admin");
+    if (existing && existing.length > 0) {
+      toast({ title: "Já é admin", description: "Este usuário já possui permissão de administrador." });
+      return;
+    }
+    const { error } = await supabase.from("user_roles" as any).insert({ user_id: userId, role: "admin" });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Admin adicionado com sucesso! ✅" });
+    setAdminEmail("");
+    fetchAdminUsers();
+  };
+
+  const removeAdmin = async (userId: string) => {
+    const { error } = await supabase.from("user_roles" as any).delete().eq("user_id", userId).eq("role", "admin");
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Permissão de admin removida" });
+    fetchAdminUsers();
+  };
+
+  // ── Subscription Actions ──
+  const toggleSubscriptionStatus = async (sub: SubscriptionItem) => {
+    const newStatus = sub.status === "active" ? "inactive" : "active";
+    const { error } = await supabase.from("subscriptions" as any).update({ status: newStatus } as any).eq("id", sub.id);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Assinatura ${newStatus === "active" ? "ativada" : "desativada"}` });
+    fetchSubscriptions();
+  };
+
+  const changeSubscriptionPlan = async (sub: SubscriptionItem, newPlan: string) => {
+    const { error } = await supabase.from("subscriptions" as any).update({ plan: newPlan } as any).eq("id", sub.id);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `Plano alterado para ${newPlan}` });
+    fetchSubscriptions();
+  };
+
+  const addExtraHours = async () => {
+    if (!extraHoursUserId || !extraHours) return;
+    const sub = subscriptions.find(s => s.id === extraHoursUserId);
+    if (!sub) return;
+    const newHours = sub.trial_hours + Number(extraHours);
+    const { error } = await supabase.from("subscriptions" as any).update({ trial_hours: newHours } as any).eq("id", sub.id);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: `${extraHours}h adicionadas ao teste do usuário` });
+    setExtraHoursUserId(null);
+    setExtraHours("");
+    fetchSubscriptions();
+  };
+
+  const getTrialStatus = (sub: SubscriptionItem) => {
+    if (sub.plan !== "trial") return null;
+    const started = new Date(sub.trial_started_at).getTime();
+    const elapsed = (Date.now() - started) / (1000 * 60 * 60);
+    const remaining = Math.max(0, sub.trial_hours - elapsed);
+    if (remaining <= 0) return "Teste expirado";
+    return `${remaining.toFixed(1)}h restantes`;
   };
 
   // ── Stats ──
@@ -441,11 +562,12 @@ const Admin = () => {
 
   const renderContentManager = () => {
     const catInfo = contentCategories.find((c) => c.id === activeSection);
+    const sectionLabel = catInfo?.label || adminMenu.find(m => m.id === activeSection)?.label || activeSection;
     return (
       <div className="animate-fade-in space-y-6 min-w-0 w-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-display font-bold mb-1">Gerenciar {catInfo?.label}</h2>
+            <h2 className="text-2xl font-display font-bold mb-1">Gerenciar {sectionLabel}</h2>
             <p className="text-muted-foreground text-sm">{content.length} itens cadastrados</p>
           </div>
           <Button variant="hero" size="sm" onClick={openAddContent}>
@@ -628,6 +750,147 @@ const Admin = () => {
     </div>
   );
 
+  const renderSubscriptions = () => {
+    const filteredSubs = subscriptions.filter(s =>
+      (s.user_name || "").toLowerCase().includes(subSearch.toLowerCase()) ||
+      (s.user_email || "").toLowerCase().includes(subSearch.toLowerCase())
+    );
+
+    return (
+      <div className="animate-fade-in space-y-6">
+        <div>
+          <h2 className="text-2xl font-display font-bold mb-1">Gerenciar Assinaturas</h2>
+          <p className="text-muted-foreground text-sm">{subscriptions.length} assinaturas</p>
+        </div>
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nome ou email..." value={subSearch} onChange={(e) => setSubSearch(e.target.value)} className="pl-10" />
+        </div>
+
+        <div className="space-y-3">
+          {filteredSubs.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhuma assinatura encontrada.</p>
+          ) : (
+            filteredSubs.map((sub) => {
+              const trialStatus = getTrialStatus(sub);
+              return (
+                <div key={sub.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <h4 className="font-medium truncate">{sub.user_name || "Sem nome"}</h4>
+                      <p className="text-xs text-muted-foreground truncate">{sub.user_email}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sub.status === "active" ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                        {sub.status === "active" ? "Ativa" : "Inativa"}
+                      </span>
+                      <Switch checked={sub.status === "active"} onCheckedChange={() => toggleSubscriptionStatus(sub)} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Plano</p>
+                      <p className="font-medium capitalize">{sub.plan === "trial" ? "Teste Grátis" : sub.plan === "monthly" ? "Mensal" : sub.plan === "annual" ? "Anual" : sub.plan}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Horas de Teste</p>
+                      <p className="font-medium">{sub.trial_hours}h</p>
+                    </div>
+                    {trialStatus && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Status do Teste</p>
+                        <p className={`font-medium text-xs ${trialStatus.includes("expirado") ? "text-destructive" : "text-emerald-400"}`}>
+                          <Clock className="w-3 h-3 inline mr-1" />{trialStatus}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-muted-foreground">Desde</p>
+                      <p className="font-medium text-xs">{new Date(sub.activated_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">Alterar Plano</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => changeSubscriptionPlan(sub, "trial")}>Teste Grátis</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => changeSubscriptionPlan(sub, "monthly")}>Mensal</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => changeSubscriptionPlan(sub, "annual")}>Anual</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button variant="outline" size="sm" onClick={() => { setExtraHoursUserId(sub.id); setExtraHours(""); }}>
+                      <Plus className="w-3 h-3 mr-1" /> Dar Horas
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Extra hours dialog */}
+        <Dialog open={!!extraHoursUserId} onOpenChange={() => setExtraHoursUserId(null)}>
+          <DialogContent className="bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-display">Adicionar Horas de Teste</DialogTitle>
+              <DialogDescription>Quantas horas extras deseja adicionar?</DialogDescription>
+            </DialogHeader>
+            <Input type="number" min="1" placeholder="Ex: 2" value={extraHours} onChange={(e) => setExtraHours(e.target.value)} />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setExtraHoursUserId(null)}>Cancelar</Button>
+              <Button variant="hero" onClick={addExtraHours}>Adicionar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
+
+  const renderAddAdmin = () => (
+    <div className="animate-fade-in space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-2xl font-display font-bold mb-1">Gerenciar Administradores</h2>
+        <p className="text-muted-foreground text-sm">Adicione ou remova permissões de administrador.</p>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h3 className="font-display font-semibold">Adicionar Novo Admin</h3>
+        <div className="flex gap-2">
+          <Input placeholder="Email do usuário..." value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="flex-1" />
+          <Button variant="hero" onClick={addAdmin}>
+            <UserPlus className="w-4 h-4 mr-1" /> Adicionar
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">O usuário precisa já estar cadastrado no sistema.</p>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <h3 className="font-display font-semibold">Admins Atuais ({adminUsers.length})</h3>
+        {adminUsers.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Nenhum administrador encontrado.</p>
+        ) : (
+          <div className="space-y-2">
+            {adminUsers.map((a) => (
+              <div key={a.user_id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div>
+                  <p className="font-medium text-sm">{a.name || "Sem nome"}</p>
+                  <p className="text-xs text-muted-foreground">{a.email}</p>
+                </div>
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => removeAdmin(a.user_id)}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Remover
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderTvInstructions = () => (
     <div className="animate-fade-in space-y-6 max-w-3xl">
       <div>
@@ -699,7 +962,7 @@ const Admin = () => {
     </div>
   );
 
-  const isContentSection = contentCategories.some((c) => c.id === activeSection);
+  const isContentSection = contentCategories.some((c) => c.id === activeSection) || ["novos", "novidades", "doramas"].includes(activeSection);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -755,6 +1018,8 @@ const Admin = () => {
           {activeSection === "users" && renderUsers()}
           {activeSection === "banner" && renderBannerManager()}
           {activeSection === "tv-instructions" && renderTvInstructions()}
+          {activeSection === "subscriptions" && renderSubscriptions()}
+          {activeSection === "add-admin" && renderAddAdmin()}
           {isContentSection && renderContentManager()}
         </div>
       </main>

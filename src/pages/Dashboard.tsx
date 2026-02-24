@@ -545,14 +545,16 @@ const Dashboard = () => {
 
         {activeSection === "home" && !searchQuery && !activeCategory && (() => {
           const categoryBlocks = [
+            { label: "🎬 Filmes", filter: "Filmes" },
+            { label: "🖍️ Desenhos", filter: "Desenhos" },
             { label: "🆕 Novos na CartPlay", filter: "Novos na CartPlay" },
             { label: "🔥 Novidades", filter: "Novidades" },
-            { label: "🎬 Terror", filter: "Terror" },
             { label: "🇰🇷 Doramas", filter: "Doramas" },
+            { label: "📺 Canais", filter: "Canais" },
             { label: "⭐ Premium", filter: "Premium" },
             { label: "😂 Comédia", filter: "Comédia" },
             { label: "💥 Ação", filter: "Ação" },
-            { label: "📺 Canais", filter: "Canais" },
+            { label: "🎬 Terror", filter: "Terror" },
           ];
 
           return categoryBlocks.map((block) => {
