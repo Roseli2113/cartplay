@@ -104,27 +104,29 @@ const Dashboard = () => {
   // Handle browser back button - navigate within app sections instead of leaving
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
-      e.preventDefault();
+      // Always prevent leaving the app
       if (playingContentRef.current) {
         setPlayingContent(null);
-        window.history.pushState({ section: activeSection }, "");
-        return;
-      }
-      const history = sectionHistoryRef.current;
-      if (history.length > 1) {
-        history.pop();
-        const prevSection = history[history.length - 1];
-        setActiveSection(prevSection);
-        window.history.pushState({ section: prevSection }, "");
       } else {
-        window.history.pushState({ section: "home" }, "");
+        const history = sectionHistoryRef.current;
+        if (history.length > 1) {
+          history.pop();
+          const prevSection = history[history.length - 1];
+          setActiveSection(prevSection);
+        }
+        // If already at home with no history, stay put
       }
+      // Always re-push state so browser never actually leaves the page
+      window.history.pushState({ section: "dashboard" }, "");
     };
 
-    window.history.pushState({ section: "home" }, "");
+    // Replace current entry and add a guard entry
+    window.history.replaceState({ section: "dashboard" }, "");
+    window.history.pushState({ section: "dashboard" }, "");
+
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [activeSection]);
+  }, []);
 
   useEffect(() => {
     const fetchContent = async () => {
