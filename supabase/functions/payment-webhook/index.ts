@@ -17,11 +17,6 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await req.json();
-
-    // Expected payload format:
-    // { "event": "payment_approved", "email": "user@example.com", "plan": "monthly" }
-    // or with user_id directly:
-    // { "event": "payment_approved", "user_id": "uuid", "plan": "monthly" }
     const { event, email, user_id, plan } = body;
 
     if (!event) {
@@ -42,6 +37,14 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!profile) {
+        // Log failed transaction
+        await supabase.from("payment_transactions").insert({
+          email,
+          event,
+          plan: plan || "monthly",
+          status: "failed",
+          payload: body,
+        });
         return new Response(
           JSON.stringify({ error: "User not found with provided email" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -60,11 +63,9 @@ Deno.serve(async (req) => {
     const selectedPlan = plan || "monthly";
 
     if (event === "payment_approved" || event === "payment.approved" || event === "paid") {
-      // Calculate 30-day expiry
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      // Update or create subscription
       const { data: existingSub } = await supabase
         .from("subscriptions")
         .select("id")
@@ -83,6 +84,9 @@ Deno.serve(async (req) => {
           .eq("user_id", targetUserId);
 
         if (error) {
+          await supabase.from("payment_transactions").insert({
+            user_id: targetUserId, email, event, plan: selectedPlan, status: "failed", payload: body,
+          });
           return new Response(
             JSON.stringify({ error: error.message }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -99,12 +103,20 @@ Deno.serve(async (req) => {
         });
 
         if (error) {
+          await supabase.from("payment_transactions").insert({
+            user_id: targetUserId, email, event, plan: selectedPlan, status: "failed", payload: body,
+          });
           return new Response(
             JSON.stringify({ error: error.message }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
       }
+
+      // Log successful payment
+      await supabase.from("payment_transactions").insert({
+        user_id: targetUserId, email, event, plan: selectedPlan, status: "paid", payload: body,
+      });
 
       return new Response(
         JSON.stringify({
@@ -123,11 +135,21 @@ Deno.serve(async (req) => {
         .update({ status: "inactive" })
         .eq("user_id", targetUserId);
 
+      // Log refused/refunded
+      await supabase.from("payment_transactions").insert({
+        user_id: targetUserId, email, event, plan: selectedPlan, status: "refused", payload: body,
+      });
+
       return new Response(
         JSON.stringify({ success: true, message: "Subscription deactivated" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Log unknown event
+    await supabase.from("payment_transactions").insert({
+      user_id: targetUserId, email, event, plan: selectedPlan, status: "pending", payload: body,
+    });
 
     return new Response(
       JSON.stringify({ success: true, message: `Event '${event}' received but no action taken` }),
