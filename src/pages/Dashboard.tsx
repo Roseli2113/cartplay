@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
-  Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2,
+  Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft,
 } from "lucide-react";
 import YouTubePlayer from "@/components/YouTubePlayer";
 import { useAuth } from "@/hooks/useAuth";
@@ -179,22 +179,22 @@ const Dashboard = () => {
         {card.thumbnail_url ? (
           <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
         ) : (
-          <Film className="w-10 h-10 text-muted-foreground/30" />
+          <Film className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground/30" />
         )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-          <Play className="w-10 h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current drop-shadow-lg" />
+          <Play className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current drop-shadow-lg" />
         </div>
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
-          <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
-          <span className="text-[10px] text-white/60">{card.category}</span>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 sm:p-2 pt-6">
+          <h3 className="font-medium text-[10px] sm:text-xs text-white truncate">{card.title}</h3>
+          <span className="text-[9px] sm:text-[10px] text-white/60">{card.category}</span>
         </div>
       </div>
       {showFavBtn && (
         <button
           onClick={(e) => { e.stopPropagation(); toggleFavorite(card); }}
-          className="absolute top-1.5 right-1.5 z-10 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors touch-manipulation"
+          className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors touch-manipulation"
         >
-          <Heart className={`w-4 h-4 ${favoriteIds.has(card.id) ? 'text-red-500 fill-red-500' : 'text-white/70'}`} />
+          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${favoriteIds.has(card.id) ? 'text-red-500 fill-red-500' : 'text-white/70'}`} />
         </button>
       )}
     </div>
@@ -422,7 +422,7 @@ const Dashboard = () => {
           <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted">
             {banner.trailer_url ? (
               <iframe
-                src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&mute=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0`}
+                src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0`}
                 className="absolute inset-0 w-full h-full"
                 style={{ border: 'none' }}
                 allow="autoplay; encrypted-media"
@@ -561,6 +561,22 @@ const Dashboard = () => {
           <button className="lg:hidden mr-4 text-muted-foreground" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
           </button>
+          {activeSection !== "home" && (
+            <button
+              className="mr-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
+              onClick={() => {
+                const history = sectionHistoryRef.current;
+                if (history.length > 1) {
+                  history.pop();
+                  setActiveSection(history[history.length - 1]);
+                } else {
+                  setActiveSection("home");
+                }
+              }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <h1 className="font-display font-semibold text-lg">
             {menuItems.find((m) => m.id === activeSection)?.label || "Início"}
           </h1>
