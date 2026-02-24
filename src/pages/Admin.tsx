@@ -16,7 +16,7 @@ import {
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
   Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
   Monitor, BookOpen, Image, Wifi, Flame, CreditCard, UserPlus, Clock,
-  Link2, Copy, CheckCircle, History, ShoppingCart, Send, AlertCircle,
+  Link2, Copy, CheckCircle, History, ShoppingCart, Send, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -1148,9 +1148,14 @@ const Admin = () => {
 
     return (
       <div className="animate-fade-in space-y-6">
-        <div>
-          <h2 className="text-2xl font-display font-bold mb-1">Vendas</h2>
-          <p className="text-muted-foreground text-sm">{transactions.length} registros de vendas</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-display font-bold mb-1">Vendas</h2>
+            <p className="text-muted-foreground text-sm">{transactions.length} registros de vendas</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchTransactions}>
+            <RefreshCw className="w-4 h-4 mr-1" /> Atualizar
+          </Button>
         </div>
 
         {/* Test event sender */}
