@@ -45,6 +45,16 @@ const Index = () => {
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Assista filmes, séries, desenhos e canais ao vivo com qualidade incrível. Disponível em todos os seus dispositivos.
           </p>
+          <div className="mt-8 mb-8 w-full max-w-sm sm:max-w-4xl mx-auto rounded-xl overflow-hidden border border-border shadow-2xl animate-fade-in">
+            <img
+              src={dashboardPreview}
+              alt="CartPlay - Prévia da plataforma"
+              className="block w-full h-auto"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+            />
+          </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="hero" size="lg" asChild>
               <Link to="/register">
@@ -54,9 +64,6 @@ const Index = () => {
             <Button variant="hero-outline" size="lg" asChild>
               <Link to="#planos">Ver planos</Link>
             </Button>
-          </div>
-          <div className="mt-12 max-w-4xl mx-auto rounded-xl overflow-hidden border border-border shadow-2xl">
-            <img src={dashboardPreview} alt="CartPlay - Prévia da plataforma" className="w-full h-auto" />
           </div>
         </div>
       </section>
