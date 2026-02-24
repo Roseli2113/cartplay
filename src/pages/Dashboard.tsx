@@ -475,7 +475,7 @@ const Dashboard = () => {
               {banner.trailer_url && (
                 <button
                   onClick={() => setTrailerMuted(!trailerMuted)}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation z-10 relative"
                 >
                   {trailerMuted ? <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
                 </button>
