@@ -177,6 +177,19 @@ const Admin = () => {
     setContentFormOpen(true);
   };
 
+  const convertToEmbedUrl = (url: string): string => {
+    // youtube.com/watch?v=ID
+    const watchMatch = url.match(/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/);
+    if (watchMatch) return `https://www.youtube.com/embed/${watchMatch[1]}`;
+    // youtu.be/ID
+    const shortMatch = url.match(/(?:youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    // youtube.com/shorts/ID
+    const shortsMatch = url.match(/(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]+)/);
+    if (shortsMatch) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
+    return url;
+  };
+
   const saveContent = async () => {
     if (!contentForm.title || !contentForm.stream_url) {
       toast({ title: "Preencha os campos obrigatórios", description: "Título e URL de streaming são obrigatórios.", variant: "destructive" });
@@ -185,11 +198,13 @@ const Admin = () => {
     const tableName = tableMap[activeSection];
     if (!tableName) return;
 
+    const embedUrl = convertToEmbedUrl(contentForm.stream_url.trim());
+
     if (editingContent) {
       const { error } = await supabase.from(tableName as any).update({
         title: contentForm.title,
         description: contentForm.description,
-        stream_url: contentForm.stream_url,
+        stream_url: embedUrl,
         thumbnail_url: contentForm.thumbnail_url,
       } as any).eq("id", editingContent.id);
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
@@ -197,7 +212,7 @@ const Admin = () => {
       const { error } = await supabase.from(tableName as any).insert({
         title: contentForm.title,
         description: contentForm.description,
-        stream_url: contentForm.stream_url,
+        stream_url: embedUrl,
         thumbnail_url: contentForm.thumbnail_url,
       });
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }

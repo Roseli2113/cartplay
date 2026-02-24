@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
   Flame, Tv, QrCode, ChevronRight, Shield,
@@ -213,28 +212,33 @@ const Dashboard = () => {
           {renderContent()}
         </div>
       </main>
-      {/* Video Player Dialog */}
-      <Dialog open={!!playingContent} onOpenChange={(open) => !open && setPlayingContent(null)}>
-        <DialogContent className="bg-black border-border max-w-4xl p-0 overflow-hidden">
-          {playingContent && (
-            <div className="w-full">
-              <div className="p-4 bg-card">
-                <h2 className="font-display font-semibold text-lg">{playingContent.title}</h2>
-                <span className="text-xs text-muted-foreground">{playingContent.category}</span>
-              </div>
-              <div className="aspect-video w-full bg-black">
-                <iframe
-                  src={playingContent.stream_url}
-                  className="w-full h-full"
-                  allowFullScreen
-                  allow="autoplay; encrypted-media; picture-in-picture"
-                  title={playingContent.title}
-                />
-              </div>
+      {/* Fullscreen Video Player */}
+      {playingContent && (
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm">
+            <div>
+              <h2 className="font-display font-semibold text-white text-lg">{playingContent.title}</h2>
+              <span className="text-xs text-white/60">{playingContent.category}</span>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            <button
+              onClick={() => setPlayingContent(null)}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
+          <div className="flex-1 relative">
+            <iframe
+              src={`${playingContent.stream_url}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=0&controls=1&autoplay=1`}
+              className="absolute inset-0 w-full h-full"
+              allowFullScreen
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              title={playingContent.title}
+              style={{ border: 'none' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
