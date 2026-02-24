@@ -171,6 +171,7 @@ const Admin = () => {
   const [testEvent, setTestEvent] = useState("payment_approved");
   const [testPlan, setTestPlan] = useState("monthly");
   const [sendingTest, setSendingTest] = useState(false);
+  const [refreshingTransactions, setRefreshingTransactions] = useState(false);
 
   // Fetch banner
   const fetchBanner = useCallback(async () => {
@@ -265,15 +266,37 @@ const Admin = () => {
 
   // Fetch transactions
   const fetchTransactions = useCallback(async () => {
-    const { data: txs } = await supabase.from("payment_transactions" as any).select("*").order("created_at", { ascending: false });
-    if (!txs) return;
-    const { data: profiles } = await supabase.from("profiles" as any).select("user_id, name, email");
-    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-    setTransactions((txs as any[]).map((t: any) => {
-      const p = profileMap.get(t.user_id) as any;
-      return { ...t, user_name: p?.name || "", user_email: p?.email || t.email || "" };
-    }));
-  }, []);
+    setRefreshingTransactions(true);
+    try {
+      const { data: txs, error: txError } = await supabase
+        .from("payment_transactions" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (txError) throw txError;
+      if (!txs) {
+        setTransactions([]);
+        return;
+      }
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles" as any)
+        .select("user_id, name, email");
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+      setTransactions((txs as any[]).map((t: any) => {
+        const p = profileMap.get(t.user_id) as any;
+        return { ...t, user_name: p?.name || "", user_email: p?.email || t.email || "" };
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível atualizar as vendas.";
+      toast({ title: "Erro ao atualizar vendas", description: message, variant: "destructive" });
+    } finally {
+      setRefreshingTransactions(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
     if (activeSection === "sales" || activeSection === "transactions") fetchTransactions();
@@ -1153,8 +1176,14 @@ const Admin = () => {
             <h2 className="text-2xl font-display font-bold mb-1">Vendas</h2>
             <p className="text-muted-foreground text-sm">{transactions.length} registros de vendas</p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchTransactions}>
-            <RefreshCw className="w-4 h-4 mr-1" /> Atualizar
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={refreshingTransactions}
+            onClick={() => void fetchTransactions()}
+          >
+            <RefreshCw className={`w-4 h-4 mr-1 ${refreshingTransactions ? "animate-spin" : ""}`} />
+            {refreshingTransactions ? "Atualizando..." : "Atualizar"}
           </Button>
         </div>
 

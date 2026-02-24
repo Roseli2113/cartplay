@@ -21,7 +21,8 @@ Deno.serve(async (req) => {
 
     // Normalize fields from different payment platforms (Lowify, Mercado Pago, etc.)
     const event = body.event || body.status || body.type || body.action || null;
-    const email = body.email || body.customer_email || body.payer?.email || body.buyer?.email || body.customer?.email || null;
+    const rawEmail = body.email || body.customer_email || body.payer?.email || body.buyer?.email || body.customer?.email || null;
+    const email = rawEmail ? String(rawEmail).trim().toLowerCase() : null;
     const user_id = body.user_id || null;
     const plan = body.plan || body.product || "monthly";
     const customerName = body.name || body.customer_name || body.payer?.name || body.buyer?.name || body.customer?.name || null;
@@ -102,6 +103,87 @@ Deno.serve(async (req) => {
     // Find user
     let targetUserId = user_id;
 
+    const statusPriority: Record<string, number> = {
+      pending: 1,
+      failed: 1,
+      paid: 3,
+      refused: 3,
+    };
+
+    // Helper: find latest transaction for this customer (email first, then user_id)
+    const findLatestTransaction = async () => {
+      if (email) {
+        const { data } = await supabase
+          .from("payment_transactions")
+          .select("id, status")
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data) return data;
+      }
+
+      if (targetUserId) {
+        const { data } = await supabase
+          .from("payment_transactions")
+          .select("id, status")
+          .eq("user_id", targetUserId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data) return data;
+      }
+
+      return null;
+    };
+
+    const shouldSkipDowngrade = (currentStatus: string, nextStatus: string) => {
+      const currentRank = statusPriority[currentStatus] ?? 0;
+      const nextRank = statusPriority[nextStatus] ?? 0;
+      return nextRank < currentRank;
+    };
+
+    // Helper: keep one row per customer and update status progression
+    const upsertTransaction = async (
+      status: string,
+      eventName: string,
+      meta?: Record<string, unknown>,
+    ) => {
+      const existing = await findLatestTransaction();
+      const payloadToSave = meta ? addMetaToPayload(meta) : body;
+
+      if (existing) {
+        if (shouldSkipDowngrade(existing.status, status)) {
+          return;
+        }
+
+        await supabase
+          .from("payment_transactions")
+          .update({
+            event: eventName,
+            status,
+            payload: payloadToSave,
+            user_id: targetUserId,
+            plan: selectedPlan,
+            email,
+          })
+          .eq("id", existing.id);
+
+        return;
+      }
+
+      await supabase.from("payment_transactions").insert({
+        user_id: targetUserId,
+        email: email || "unknown",
+        event: eventName,
+        plan: selectedPlan,
+        status,
+        payload: payloadToSave,
+      });
+    };
+
     if (!targetUserId && email) {
       const { data: profile } = await supabase
         .from("profiles")
@@ -111,16 +193,10 @@ Deno.serve(async (req) => {
 
       if (!profile) {
         // Log transaction even if no user matched, but DO NOT fail the webhook
-        await supabase.from("payment_transactions").insert({
-          email,
-          event: String(event),
-          plan: selectedPlan,
-          status: inferredStatus,
-          payload: addMetaToPayload({
-            user_matched: false,
-            reason: "profile_not_found",
-            inferred_status: inferredStatus,
-          }),
+        await upsertTransaction(inferredStatus, String(event), {
+          user_matched: false,
+          reason: "profile_not_found",
+          inferred_status: inferredStatus,
         });
 
         return new Response(
@@ -138,16 +214,10 @@ Deno.serve(async (req) => {
 
     if (!targetUserId) {
       // Log even if no user found (but DO NOT fail the webhook)
-      await supabase.from("payment_transactions").insert({
-        email: email || "unknown",
-        event: String(event),
-        plan: selectedPlan,
-        status: inferredStatus,
-        payload: addMetaToPayload({
-          user_matched: false,
-          reason: "missing_email_or_user_id",
-          inferred_status: inferredStatus,
-        }),
+      await upsertTransaction(inferredStatus, String(event), {
+        user_matched: false,
+        reason: "missing_email_or_user_id",
+        inferred_status: inferredStatus,
       });
       return new Response(
         JSON.stringify({
@@ -160,45 +230,6 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-
-    // Helper: find existing pending transaction for this email to update instead of duplicating
-    const findPendingTransaction = async () => {
-      if (!email) return null;
-      const { data } = await supabase
-        .from("payment_transactions")
-        .select("id")
-        .eq("email", email)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    };
-
-    // Helper: upsert transaction — update existing pending row or insert new
-    const upsertTransaction = async (status: string, eventName: string) => {
-      const existing = await findPendingTransaction();
-      if (existing && status !== "pending") {
-        // Update the existing pending row
-        await supabase
-          .from("payment_transactions")
-          .update({
-            event: eventName,
-            status,
-            payload: body,
-            user_id: targetUserId,
-            plan: selectedPlan,
-          })
-          .eq("id", existing.id);
-      } else if (!existing || status === "pending") {
-        // Insert only if no pending row exists yet (or it's a new pending)
-        if (status === "pending" && existing) return; // already has a pending row, skip duplicate
-        await supabase.from("payment_transactions").insert({
-          user_id: targetUserId, email, event: eventName, plan: selectedPlan, status, payload: body,
-        });
-      }
-    };
 
     if (isPaid) {
       const now = new Date();
