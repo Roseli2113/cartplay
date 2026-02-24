@@ -15,6 +15,7 @@ import {
   Play, Home, Users, Film, Tv, Radio, Shield, LogOut, Menu, X,
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
   Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
+  Monitor, BookOpen, Image,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +66,8 @@ const adminMenu = [
   { icon: Baby, label: "Desenhos", id: "cartoons" },
   { icon: Radio, label: "Canais ao Vivo", id: "live" },
   { icon: Dribbble, label: "Futebol", id: "football" },
+  { icon: Image, label: "Banner / Trailer", id: "banner" },
+  { icon: BookOpen, label: "Instruções TV App", id: "tv-instructions" },
 ];
 
 const Admin = () => {
@@ -90,6 +93,24 @@ const Admin = () => {
   const [contentForm, setContentForm] = useState({ title: "", description: "", stream_url: "", thumbnail_url: "" });
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Banner state
+  const [bannerForm, setBannerForm] = useState({ title: "", description: "", banner_url: "", trailer_url: "", is_active: false });
+  const [bannerId, setBannerId] = useState<string | null>(null);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerFileRef = useRef<HTMLInputElement>(null);
+
+  // Fetch banner
+  const fetchBanner = useCallback(async () => {
+    const { data } = await supabase.from("dashboard_banner" as any).select("*").limit(1);
+    if (data && data.length > 0) {
+      const b = data[0] as any;
+      setBannerId(b.id);
+      setBannerForm({ title: b.title || "", description: b.description || "", banner_url: b.banner_url || "", trailer_url: b.trailer_url || "", is_active: b.is_active || false });
+    }
+  }, []);
+
+  useEffect(() => { fetchBanner(); }, [fetchBanner]);
 
   const uploadThumbnail = async (file: File) => {
     setUploading(true);
@@ -443,6 +464,171 @@ const Admin = () => {
     );
   };
 
+  const uploadBannerImage = async (file: File) => {
+    setBannerUploading(true);
+    const ext = file.name.split(".").pop();
+    const filePath = `banners/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("thumbnails").upload(filePath, file);
+    if (error) {
+      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+      setBannerUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("thumbnails").getPublicUrl(filePath);
+    setBannerForm((f) => ({ ...f, banner_url: urlData.publicUrl }));
+    setBannerUploading(false);
+    toast({ title: "Imagem do banner enviada!" });
+  };
+
+  const saveBanner = async () => {
+    const convertTrailer = (url: string): string => {
+      const watchMatch = url.match(/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/);
+      if (watchMatch) return `https://www.youtube.com/embed/${watchMatch[1]}`;
+      const shortMatch = url.match(/(?:youtu\.be\/)([a-zA-Z0-9_-]+)/);
+      if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+      return url;
+    };
+    const payload = {
+      title: bannerForm.title,
+      description: bannerForm.description,
+      banner_url: bannerForm.banner_url,
+      trailer_url: bannerForm.trailer_url ? convertTrailer(bannerForm.trailer_url.trim()) : "",
+      is_active: bannerForm.is_active,
+    };
+    if (bannerId) {
+      const { error } = await supabase.from("dashboard_banner" as any).update(payload as any).eq("id", bannerId);
+      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    } else {
+      const { data, error } = await supabase.from("dashboard_banner" as any).insert(payload).select();
+      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+      if (data && data.length > 0) setBannerId((data[0] as any).id);
+    }
+    toast({ title: "Banner salvo com sucesso!" });
+  };
+
+  const renderBannerManager = () => (
+    <div className="animate-fade-in space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-2xl font-display font-bold mb-1">Banner / Trailer</h2>
+        <p className="text-muted-foreground text-sm">Configure o banner ou trailer que aparece no topo do Dashboard.</p>
+      </div>
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <div>
+          <label className="text-sm font-medium mb-1.5 block">Título</label>
+          <Input placeholder="Título do destaque" value={bannerForm.title} onChange={(e) => setBannerForm(f => ({ ...f, title: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1.5 block">Descrição</label>
+          <Input placeholder="Descrição curta (opcional)" value={bannerForm.description} onChange={(e) => setBannerForm(f => ({ ...f, description: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1.5 block">URL do Trailer (YouTube)</label>
+          <Input placeholder="https://youtube.com/watch?v=..." value={bannerForm.trailer_url} onChange={(e) => setBannerForm(f => ({ ...f, trailer_url: e.target.value }))} />
+          <p className="text-xs text-muted-foreground mt-1">Se preenchido, o trailer será exibido como vídeo de fundo. Caso contrário, a imagem será usada.</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium mb-1.5 block">Imagem de Banner</label>
+          <input type="file" ref={bannerFileRef} accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadBannerImage(file); }} />
+          <div className="flex gap-2 mb-2">
+            <Button type="button" variant="outline" size="sm" disabled={bannerUploading} onClick={() => bannerFileRef.current?.click()} className="flex-1">
+              <Upload className="w-4 h-4 mr-1" /> {bannerUploading ? "Enviando..." : "Enviar Imagem"}
+            </Button>
+          </div>
+          {bannerForm.banner_url && (
+            <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+              <img src={bannerForm.banner_url} alt="Banner preview" className="w-full h-32 object-cover" />
+              <button onClick={() => setBannerForm(f => ({ ...f, banner_url: "" }))} className="absolute top-1 right-1 bg-background/80 rounded-full p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-1.5">Ou cole uma URL:</p>
+          <Input placeholder="https://... (opcional)" value={bannerForm.banner_url} onChange={(e) => setBannerForm(f => ({ ...f, banner_url: e.target.value }))} className="mt-1" />
+        </div>
+        <div className="flex items-center gap-3 pt-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={bannerForm.is_active} onChange={(e) => setBannerForm(f => ({ ...f, is_active: e.target.checked }))} className="rounded border-border" />
+            <span className="text-sm font-medium">Ativo (visível no Dashboard)</span>
+          </label>
+        </div>
+        <div className="pt-2">
+          <Button variant="hero" onClick={saveBanner}><Save className="w-4 h-4" /> Salvar Banner</Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTvInstructions = () => (
+    <div className="animate-fade-in space-y-6 max-w-3xl">
+      <div>
+        <h2 className="text-2xl font-display font-bold mb-1">Instruções - App para TV</h2>
+        <p className="text-muted-foreground text-sm">Guia para ajudar seus usuários a instalar o aplicativo na Smart TV.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-display font-semibold text-lg mb-3 flex items-center gap-2">
+            <Monitor className="w-5 h-5 text-primary" /> Android TV / TV Box
+          </h3>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+            <li>Na TV, vá em <strong className="text-foreground">Configurações → Segurança</strong> e ative <strong className="text-foreground">"Fontes desconhecidas"</strong>.</li>
+            <li>Abra o navegador da TV e acesse o link de download do APK que você disponibilizou.</li>
+            <li>Baixe e instale o arquivo APK.</li>
+            <li>Após a instalação, abra o app e faça login com email e senha.</li>
+            <li>Caso a TV não tenha navegador, use um pendrive USB para transferir o APK.</li>
+          </ol>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-display font-semibold text-lg mb-3 flex items-center gap-2">
+            <Tv className="w-5 h-5 text-primary" /> Amazon Fire TV Stick
+          </h3>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+            <li>Na Fire TV, vá em <strong className="text-foreground">Configurações → Minha Fire TV → Opções do desenvolvedor</strong>.</li>
+            <li>Ative <strong className="text-foreground">"Apps de fontes desconhecidas"</strong>.</li>
+            <li>Instale o app <strong className="text-foreground">"Downloader"</strong> pela loja da Amazon.</li>
+            <li>Abra o Downloader e digite a URL do APK.</li>
+            <li>Instale e abra o aplicativo.</li>
+          </ol>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-display font-semibold text-lg mb-3 flex items-center gap-2">
+            <Monitor className="w-5 h-5 text-primary" /> Samsung / LG Smart TV (via navegador)
+          </h3>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+            <li>Abra o navegador nativo da Smart TV.</li>
+            <li>Acesse o endereço do seu site/app (ex: <strong className="text-foreground">seusite.com</strong>).</li>
+            <li>Faça login com suas credenciais.</li>
+            <li>Para melhor experiência, adicione o site aos favoritos para acesso rápido.</li>
+          </ol>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h3 className="font-display font-semibold text-lg mb-3 flex items-center gap-2">
+            📱 Enviar pelo celular (Chromecast / Miracast)
+          </h3>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+            <li>Abra o app no celular e inicie o conteúdo.</li>
+            <li>Toque no ícone de <strong className="text-foreground">espelhar tela / cast</strong>.</li>
+            <li>Selecione sua TV na lista de dispositivos.</li>
+            <li>O conteúdo será transmitido diretamente para a TV.</li>
+          </ol>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-6 border-primary/20 bg-primary/5">
+          <h3 className="font-display font-semibold text-lg mb-2">💡 Dicas para o suporte ao usuário</h3>
+          <ul className="list-disc list-inside space-y-1.5 text-sm text-muted-foreground">
+            <li>Peça ao usuário o modelo exato da TV para orientar melhor.</li>
+            <li>Envie prints/vídeos dos passos para facilitar.</li>
+            <li>Se o APK não instalar, peça para verificar a versão do Android (mínimo 5.0).</li>
+            <li>Para TVs sem loja de apps, a melhor opção é via pendrive ou navegador.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+
   const isContentSection = contentCategories.some((c) => c.id === activeSection);
 
   return (
@@ -497,6 +683,8 @@ const Admin = () => {
         <div className="p-4 lg:p-8">
           {activeSection === "overview" && renderOverview()}
           {activeSection === "users" && renderUsers()}
+          {activeSection === "banner" && renderBannerManager()}
+          {activeSection === "tv-instructions" && renderTvInstructions()}
           {isContentSection && renderContentManager()}
         </div>
       </main>
