@@ -12,6 +12,7 @@ import { extractVideoId } from "@/components/player/YouTubeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePresenceTrack } from "@/hooks/usePresence";
 
 const categories = ["Filmes", "Séries", "Desenhos", "Canais", "Futebol"];
 
@@ -89,6 +90,9 @@ const Dashboard = () => {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
+
+  // Track this user's online presence
+  usePresenceTrack(user?.id);
 
   // Track section navigation for back button
   const handleSectionChange = (section: string) => {

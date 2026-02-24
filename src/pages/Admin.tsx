@@ -15,11 +15,12 @@ import {
   Play, Home, Users, Film, Tv, Radio, Shield, LogOut, Menu, X,
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
   Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
-  Monitor, BookOpen, Image,
+  Monitor, BookOpen, Image, Wifi,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { usePresenceCount } from "@/hooks/usePresence";
 
 // ─── Types ──────────────────────────────────────────────────────
 interface ProfileUser {
@@ -76,6 +77,7 @@ const Admin = () => {
   const { signOut } = useAuth();
   const [activeSection, setActiveSection] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const onlineCount = usePresenceCount();
 
   // Users state
   const [users, setUsers] = useState<ProfileUser[]>([]);
@@ -254,6 +256,7 @@ const Admin = () => {
 
   // ── Stats ──
   const stats = [
+    { label: "Online Agora", value: onlineCount, icon: Wifi, highlight: true },
     { label: "Total Usuários", value: users.length, icon: Users },
     { label: "Ativos", value: users.filter((u) => u.status === "active").length, icon: Shield },
     { label: "Bloqueados", value: users.filter((u) => u.status === "blocked").length, icon: Ban },
@@ -267,13 +270,19 @@ const Admin = () => {
         <h2 className="text-2xl font-display font-bold mb-1">Painel Administrativo</h2>
         <p className="text-muted-foreground">Visão geral da plataforma CartPlay.</p>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((s) => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-5 hover:border-primary/20 transition-colors">
+          <div key={s.label} className={`bg-card border rounded-xl p-5 hover:border-primary/20 transition-colors ${"highlight" in s && s.highlight ? "border-emerald-500/40 bg-emerald-500/5" : "border-border"}`}>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <s.icon className="w-5 h-5 text-primary" />
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${"highlight" in s && s.highlight ? "bg-emerald-500/15" : "bg-primary/10"}`}>
+                <s.icon className={`w-5 h-5 ${"highlight" in s && s.highlight ? "text-emerald-400" : "text-primary"}`} />
               </div>
+              {"highlight" in s && s.highlight && (
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+              )}
             </div>
             <p className="text-2xl font-display font-bold">{s.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
