@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingHeader from "@/components/LandingHeader";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import heroBg from "@/assets/hero-bg.jpg";
 import dashboardPreview from "@/assets/dashboard-preview.png";
 import {
@@ -218,6 +219,7 @@ const Index = () => {
           <p className="text-center text-xs text-muted-foreground mt-8">© 2026 CartPlay. Todos os direitos reservados.</p>
         </div>
       </footer>
+      <WhatsAppButton />
     </div>
   );
 };
