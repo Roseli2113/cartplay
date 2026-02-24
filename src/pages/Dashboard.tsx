@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -45,16 +45,52 @@ interface FavoriteItem {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signOut, profile, isAdmin, user } = useAuth();
   const { toast } = useToast();
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sectionHistoryRef = useRef<string[]>(["home"]);
   const [content, setContent] = useState<ContentCard[]>([]);
   const [playingContent, setPlayingContent] = useState<ContentCard | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const playingContentRef = useRef(playingContent);
+  playingContentRef.current = playingContent;
+
+  // Track section navigation for back button
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    sectionHistoryRef.current.push(section);
+    window.history.pushState({ section }, "");
+  };
+
+  // Handle browser back button - navigate within app sections instead of leaving
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      if (playingContentRef.current) {
+        setPlayingContent(null);
+        window.history.pushState({ section: activeSection }, "");
+        return;
+      }
+      const history = sectionHistoryRef.current;
+      if (history.length > 1) {
+        history.pop();
+        const prevSection = history[history.length - 1];
+        setActiveSection(prevSection);
+        window.history.pushState({ section: prevSection }, "");
+      } else {
+        window.history.pushState({ section: "home" }, "");
+      }
+    };
+
+    window.history.pushState({ section: "home" }, "");
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [activeSection]);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -474,7 +510,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-x-hidden">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -494,7 +530,7 @@ const Dashboard = () => {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => { setActiveSection(item.id); setSidebarOpen(false); }}
+              onClick={() => { handleSectionChange(item.id); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${activeSection === item.id ? 'bg-sidebar-accent text-foreground font-medium' : 'text-sidebar-foreground hover:bg-sidebar-accent/50'}`}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />

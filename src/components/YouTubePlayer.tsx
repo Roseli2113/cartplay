@@ -216,10 +216,10 @@ const YouTubePlayer = ({ title, category, streamUrl, onClose }: YouTubePlayerPro
       </div>
 
       {/* Video area */}
-      <div className="flex-1 relative overflow-hidden" onClick={togglePlay}>
-        <div id="yt-player-container" className="absolute inset-0 w-full h-full" />
-        {/* Click overlay */}
-        <div className="absolute inset-0 z-10" />
+      <div className="flex-1 relative overflow-hidden">
+        <div id="yt-player-container" className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }} />
+        {/* Click overlay - blocks ALL YouTube interaction */}
+        <div className="absolute inset-0 z-10" onClick={togglePlay} onTouchEnd={(e) => { e.preventDefault(); togglePlay(); }} />
 
         {/* Center play/pause indicator */}
         <div
