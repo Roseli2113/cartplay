@@ -17,12 +17,28 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await req.json();
-    const { event, email, user_id, plan } = body;
+    console.log("Webhook received payload:", JSON.stringify(body));
 
+    // Normalize fields from different payment platforms (Lowify, Mercado Pago, etc.)
+    const event = body.event || body.status || body.type || body.action || null;
+    const email = body.email || body.customer_email || body.payer?.email || body.buyer?.email || body.customer?.email || null;
+    const user_id = body.user_id || null;
+    const plan = body.plan || body.product || "monthly";
+    const customerName = body.name || body.customer_name || body.payer?.name || body.buyer?.name || body.customer?.name || null;
+
+    // If no recognizable event, log everything and accept it
     if (!event) {
+      // Log the raw payload for debugging
+      await supabase.from("payment_transactions").insert({
+        email: email || "unknown",
+        event: "unknown_format",
+        plan: plan,
+        status: "pending",
+        payload: body,
+      });
       return new Response(
-        JSON.stringify({ error: "Missing 'event' field" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: true, message: "Payload received and logged (no event field detected)", received_fields: Object.keys(body) }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -40,7 +56,7 @@ Deno.serve(async (req) => {
         // Log failed transaction
         await supabase.from("payment_transactions").insert({
           email,
-          event,
+          event: String(event),
           plan: plan || "monthly",
           status: "failed",
           payload: body,
@@ -54,15 +70,30 @@ Deno.serve(async (req) => {
     }
 
     if (!targetUserId) {
+      // Log even if no user found
+      await supabase.from("payment_transactions").insert({
+        email: email || "unknown",
+        event: String(event),
+        plan: selectedPlan,
+        status: "pending",
+        payload: body,
+      });
       return new Response(
-        JSON.stringify({ error: "Provide 'email' or 'user_id'" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: true, message: "Event logged but no user matched. Provide 'email' or 'user_id'.", received_fields: Object.keys(body) }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const selectedPlan = plan || "monthly";
 
-    if (event === "payment_approved" || event === "payment.approved" || event === "paid") {
+    // Normalize event to lowercase for matching
+    const normalizedEvent = String(event).toLowerCase().replace(/[^a-z0-9_.-]/g, '');
+
+    const isPaid = ["payment_approved", "payment.approved", "paid", "approved", "completed", "confirmed", "pix_paid", "pix.paid", "boleto_paid"].includes(normalizedEvent);
+    const isRefused = ["payment_refused", "payment.refused", "refunded", "refused", "cancelled", "canceled", "expired", "chargeback"].includes(normalizedEvent);
+    const isPending = ["pix_generated", "pix.generated", "pending", "waiting", "processing", "in_process", "boleto_generated", "boleto.generated"].includes(normalizedEvent);
+
+    if (isPaid) {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
@@ -129,15 +160,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (event === "payment_refused" || event === "payment.refused" || event === "refunded") {
+    if (isRefused) {
       await supabase
         .from("subscriptions")
         .update({ status: "inactive" })
         .eq("user_id", targetUserId);
 
-      // Log refused/refunded
       await supabase.from("payment_transactions").insert({
-        user_id: targetUserId, email, event, plan: selectedPlan, status: "refused", payload: body,
+        user_id: targetUserId, email, event: String(event), plan: selectedPlan, status: "refused", payload: body,
       });
 
       return new Response(
@@ -146,13 +176,24 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (isPending) {
+      await supabase.from("payment_transactions").insert({
+        user_id: targetUserId, email, event: String(event), plan: selectedPlan, status: "pending", payload: body,
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, message: `Pending event '${event}' logged` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Log unknown event
     await supabase.from("payment_transactions").insert({
-      user_id: targetUserId, email, event, plan: selectedPlan, status: "pending", payload: body,
+      user_id: targetUserId, email, event: String(event), plan: selectedPlan, status: "pending", payload: body,
     });
 
     return new Response(
-      JSON.stringify({ success: true, message: `Event '${event}' received but no action taken` }),
+      JSON.stringify({ success: true, message: `Event '${event}' received and logged` }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
