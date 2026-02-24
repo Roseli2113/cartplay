@@ -15,7 +15,7 @@ import {
   Play, Home, Users, Film, Tv, Radio, Shield, LogOut, Menu, X,
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
   Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
-  Monitor, BookOpen, Image, Wifi,
+  Monitor, BookOpen, Image, Wifi, Flame,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +49,21 @@ const tableMap: Record<string, string> = {
   cartoons: "cartoons",
   live: "live_channels",
   football: "football_channels",
+  novos: "movies",
+  novidades: "movies",
+  doramas: "movies",
+};
+
+// Sections that auto-set category on save
+const categoryForSection: Record<string, string> = {
+  movies: "Filmes",
+  series: "Séries",
+  cartoons: "Desenhos",
+  live: "Canais",
+  football: "Futebol",
+  novos: "Novos na CartPlay",
+  novidades: "Novidades",
+  doramas: "Doramas",
 };
 
 const contentCategories = [
@@ -67,6 +82,9 @@ const adminMenu = [
   { icon: Baby, label: "Desenhos", id: "cartoons" },
   { icon: Radio, label: "Canais ao Vivo", id: "live" },
   { icon: Dribbble, label: "Futebol", id: "football" },
+  { icon: Flame, label: "Novos na CartPlay", id: "novos" },
+  { icon: Tv, label: "Novidades", id: "novidades" },
+  { icon: Monitor, label: "Doramas", id: "doramas" },
   { icon: Image, label: "Banner / Trailer", id: "banner" },
   { icon: BookOpen, label: "Instruções TV App", id: "tv-instructions" },
 ];
@@ -150,7 +168,13 @@ const Admin = () => {
   const fetchContent = useCallback(async () => {
     const tableName = tableMap[activeSection];
     if (!tableName) return;
-    const { data } = await supabase.from(tableName as any).select("*").order("created_at", { ascending: false });
+    const cat = categoryForSection[activeSection];
+    let query = supabase.from(tableName as any).select("*").order("created_at", { ascending: false });
+    // For sections that share a table (novos, novidades, doramas → movies), filter by category
+    if (cat && ["novos", "novidades", "doramas"].includes(activeSection)) {
+      query = query.eq("category", cat);
+    }
+    const { data } = await query;
     if (data) setContent(data as unknown as ContentItem[]);
   }, [activeSection]);
 
@@ -223,12 +247,15 @@ const Admin = () => {
 
     const embedUrl = convertToEmbedUrl(contentForm.stream_url.trim());
 
+    const cat = categoryForSection[activeSection] || "";
+
     if (editingContent) {
       const { error } = await supabase.from(tableName as any).update({
         title: contentForm.title,
         description: contentForm.description,
         stream_url: embedUrl,
         thumbnail_url: contentForm.thumbnail_url,
+        category: cat,
       } as any).eq("id", editingContent.id);
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     } else {
@@ -237,6 +264,7 @@ const Admin = () => {
         description: contentForm.description,
         stream_url: embedUrl,
         thumbnail_url: contentForm.thumbnail_url,
+        category: cat,
       });
       if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     }

@@ -543,29 +543,19 @@ const Dashboard = () => {
 
         {activeSection === "home" && !searchQuery && !activeCategory && (() => {
           const categoryBlocks = [
-            { label: "🆕 Novos na CartPlay", filter: null, shuffle: true },
-            { label: "🔥 Novidades", filter: null, shuffle: true },
+            { label: "🆕 Novos na CartPlay", filter: "Novos na CartPlay" },
+            { label: "🔥 Novidades", filter: "Novidades" },
             { label: "🎬 Terror", filter: "Terror" },
             { label: "🇰🇷 Doramas", filter: "Doramas" },
             { label: "⭐ Premium", filter: "Premium" },
             { label: "😂 Comédia", filter: "Comédia" },
             { label: "💥 Ação", filter: "Ação" },
+            { label: "📺 Canais", filter: "Canais" },
           ];
 
-          // Helper to get items for a block
-          const getBlockItems = (block: typeof categoryBlocks[0], index: number) => {
-            if (block.filter) {
-              const items = displayContent.filter(c => c.category?.toLowerCase() === block.filter!.toLowerCase());
-              return items.length > 0 ? items.slice(0, 6) : null;
-            }
-            // For non-filter blocks, show shuffled slices of all content
-            const start = index * 6;
-            return displayContent.slice(start, start + 6);
-          };
-
-          return categoryBlocks.map((block, idx) => {
-            const items = getBlockItems(block, idx);
-            if (!items || items.length === 0) return null;
+          return categoryBlocks.map((block) => {
+            const items = displayContent.filter(c => c.category?.toLowerCase() === block.filter.toLowerCase()).slice(0, 6);
+            if (items.length === 0) return null;
             return (
               <div key={block.label}>
                 <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
