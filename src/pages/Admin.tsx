@@ -265,7 +265,7 @@ const Admin = () => {
     <div className="animate-fade-in space-y-8">
       <div>
         <h2 className="text-2xl font-display font-bold mb-1">Painel Administrativo</h2>
-        <p className="text-muted-foreground">Visão geral da plataforma StreamMax.</p>
+        <p className="text-muted-foreground">Visão geral da plataforma CartPlay.</p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (

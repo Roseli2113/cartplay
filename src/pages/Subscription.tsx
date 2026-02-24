@@ -68,7 +68,7 @@ const Subscription = () => {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Play className="w-4 h-4 text-primary-foreground fill-current" />
             </div>
-            <span className="font-display font-bold text-foreground">StreamMax</span>
+            <span className="font-display font-bold text-foreground">CartPlay</span>
           </div>
         </div>
       </header>

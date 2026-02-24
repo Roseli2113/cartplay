@@ -60,7 +60,7 @@ const Index = () => {
       {/* Benefits */}
       <section className="py-20 md:py-28">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-4">Por que escolher a StreamMax?</h2>
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-4">Por que escolher a CartPlay?</h2>
           <p className="text-muted-foreground text-center mb-14 max-w-xl mx-auto">Tudo o que você precisa para sua diversão, em uma única plataforma.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((b) => (
@@ -155,7 +155,7 @@ const Index = () => {
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <Play className="w-4 h-4 text-primary-foreground fill-current" />
               </div>
-              <span className="font-display font-bold text-foreground">StreamMax</span>
+              <span className="font-display font-bold text-foreground">CartPlay</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
               <a href="#" className="hover:text-foreground transition-colors">Sobre</a>
@@ -164,7 +164,7 @@ const Index = () => {
               <a href="#" className="hover:text-foreground transition-colors">Contato</a>
             </div>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-8">© 2026 StreamMax. Todos os direitos reservados.</p>
+          <p className="text-center text-xs text-muted-foreground mt-8">© 2026 CartPlay. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
