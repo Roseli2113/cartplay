@@ -26,6 +26,63 @@ Deno.serve(async (req) => {
     const plan = body.plan || body.product || "monthly";
     const customerName = body.name || body.customer_name || body.payer?.name || body.buyer?.name || body.customer?.name || null;
 
+    const selectedPlan = plan || "monthly";
+
+    // Normalize event to lowercase for matching (keep dots/underscores)
+    const normalizedEvent = event
+      ? String(event).toLowerCase().replace(/[^a-z0-9_.-]/g, "")
+      : "";
+
+    // Map known events to statuses (extended for Lowify: sale.pending / sale.paid)
+    const isPaid = [
+      "payment_approved",
+      "payment.approved",
+      "paid",
+      "approved",
+      "completed",
+      "confirmed",
+      "pix_paid",
+      "pix.paid",
+      "boleto_paid",
+      "sale.paid",
+    ].includes(normalizedEvent);
+
+    const isRefused = [
+      "payment_refused",
+      "payment.refused",
+      "refunded",
+      "refused",
+      "cancelled",
+      "canceled",
+      "expired",
+      "chargeback",
+      "sale.refused",
+      "sale.cancelled",
+      "sale.canceled",
+    ].includes(normalizedEvent);
+
+    const isPending = [
+      "pix_generated",
+      "pix.generated",
+      "pending",
+      "waiting",
+      "processing",
+      "in_process",
+      "boleto_generated",
+      "boleto.generated",
+      "sale.pending",
+    ].includes(normalizedEvent);
+
+    const inferredStatus = isPaid ? "paid" : isRefused ? "refused" : isPending ? "pending" : "pending";
+
+    const addMetaToPayload = (meta: Record<string, unknown>) => {
+      if (typeof body !== "object" || body === null) return body;
+      const b = body as Record<string, unknown>;
+      const existingMeta =
+        typeof b._meta === "object" && b._meta !== null ? (b._meta as Record<string, unknown>) : {};
+      return { ...b, _meta: { ...existingMeta, ...meta } };
+    };
+
     // If no recognizable event, log everything and accept it
     if (!event) {
       // Log the raw payload for debugging
@@ -53,45 +110,57 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!profile) {
-        // Log failed transaction
+        // Log transaction even if no user matched, but DO NOT fail the webhook
         await supabase.from("payment_transactions").insert({
           email,
           event: String(event),
-          plan: plan || "monthly",
-          status: "failed",
-          payload: body,
+          plan: selectedPlan,
+          status: inferredStatus,
+          payload: addMetaToPayload({
+            user_matched: false,
+            reason: "profile_not_found",
+            inferred_status: inferredStatus,
+          }),
         });
+
         return new Response(
-          JSON.stringify({ error: "User not found with provided email" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({
+            success: true,
+            message: "Evento recebido e registrado, mas nenhum usuário foi encontrado com este email",
+            user_matched: false,
+            inferred_status: inferredStatus,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       targetUserId = profile.user_id;
     }
 
     if (!targetUserId) {
-      // Log even if no user found
+      // Log even if no user found (but DO NOT fail the webhook)
       await supabase.from("payment_transactions").insert({
         email: email || "unknown",
         event: String(event),
         plan: selectedPlan,
-        status: "pending",
-        payload: body,
+        status: inferredStatus,
+        payload: addMetaToPayload({
+          user_matched: false,
+          reason: "missing_email_or_user_id",
+          inferred_status: inferredStatus,
+        }),
       });
       return new Response(
-        JSON.stringify({ success: true, message: "Event logged but no user matched. Provide 'email' or 'user_id'.", received_fields: Object.keys(body) }),
+        JSON.stringify({
+          success: true,
+          message: "Evento registrado, mas nenhum usuário foi vinculado. Envie 'email' ou 'user_id' no payload.",
+          user_matched: false,
+          inferred_status: inferredStatus,
+          received_fields: Object.keys(body),
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const selectedPlan = plan || "monthly";
-
-    // Normalize event to lowercase for matching
-    const normalizedEvent = String(event).toLowerCase().replace(/[^a-z0-9_.-]/g, '');
-
-    const isPaid = ["payment_approved", "payment.approved", "paid", "approved", "completed", "confirmed", "pix_paid", "pix.paid", "boleto_paid"].includes(normalizedEvent);
-    const isRefused = ["payment_refused", "payment.refused", "refunded", "refused", "cancelled", "canceled", "expired", "chargeback"].includes(normalizedEvent);
-    const isPending = ["pix_generated", "pix.generated", "pending", "waiting", "processing", "in_process", "boleto_generated", "boleto.generated"].includes(normalizedEvent);
 
     if (isPaid) {
       const now = new Date();
