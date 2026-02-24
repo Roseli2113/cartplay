@@ -103,6 +103,7 @@ const adminMenu = [
   { icon: Image, label: "Banner / Trailer", id: "banner" },
   { icon: CreditCard, label: "Assinaturas", id: "subscriptions" },
   { icon: UserPlus, label: "+ Admin", id: "add-admin" },
+  { icon: CreditCard, label: "Planos", id: "plans" },
   { icon: Link2, label: "Integração Pagamento", id: "payment-integration" },
   { icon: ShoppingCart, label: "Vendas", id: "sales" },
   { icon: History, label: "Histórico Transações", id: "transactions" },
@@ -172,6 +173,23 @@ const Admin = () => {
   const [testPlan, setTestPlan] = useState("monthly");
   const [sendingTest, setSendingTest] = useState(false);
   const [refreshingTransactions, setRefreshingTransactions] = useState(false);
+
+  // Plans state
+  interface PlanItem {
+    id: string;
+    slug: string;
+    name: string;
+    price: string;
+    period: string;
+    features: string[];
+    payment_link: string;
+    is_popular: boolean;
+    sort_order: number;
+  }
+  const [plansList, setPlansList] = useState<PlanItem[]>([]);
+  const [editingPlan, setEditingPlan] = useState<PlanItem | null>(null);
+  const [planFormOpen, setPlanFormOpen] = useState(false);
+  const [planForm, setPlanForm] = useState({ name: "", price: "", period: "", features: "", payment_link: "", is_popular: false });
 
   // Fetch banner
   const fetchBanner = useCallback(async () => {
@@ -301,6 +319,49 @@ const Admin = () => {
   useEffect(() => {
     if (activeSection === "sales" || activeSection === "transactions") fetchTransactions();
   }, [activeSection, fetchTransactions]);
+
+  // Fetch plans
+  const fetchPlans = useCallback(async () => {
+    const { data } = await supabase.from("subscription_plans" as any).select("*").order("sort_order", { ascending: true });
+    if (data) setPlansList(data as unknown as PlanItem[]);
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === "plans") fetchPlans();
+  }, [activeSection, fetchPlans]);
+
+  const openEditPlan = (plan: PlanItem) => {
+    setEditingPlan(plan);
+    setPlanForm({
+      name: plan.name,
+      price: plan.price,
+      period: plan.period,
+      features: plan.features.join("\n"),
+      payment_link: plan.payment_link || "",
+      is_popular: plan.is_popular,
+    });
+    setPlanFormOpen(true);
+  };
+
+  const savePlan = async () => {
+    if (!editingPlan) return;
+    const featuresArr = planForm.features.split("\n").map(f => f.trim()).filter(Boolean);
+    const { error } = await supabase.from("subscription_plans" as any).update({
+      name: planForm.name,
+      price: planForm.price,
+      period: planForm.period,
+      features: featuresArr,
+      payment_link: planForm.payment_link,
+      is_popular: planForm.is_popular,
+    } as any).eq("id", editingPlan.id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Plano atualizado com sucesso!" });
+    setPlanFormOpen(false);
+    fetchPlans();
+  };
 
   // Send test webhook event
   const sendTestEvent = async () => {
@@ -1000,6 +1061,101 @@ const Admin = () => {
     setTimeout(() => setWebhookCopied(false), 2000);
   };
 
+  const renderPlans = () => (
+    <div className="animate-fade-in space-y-6 max-w-3xl">
+      <div>
+        <h2 className="text-2xl font-display font-bold mb-1">Gerenciar Planos</h2>
+        <p className="text-muted-foreground text-sm">Edite preços, nomes e links de pagamento dos planos.</p>
+      </div>
+
+      <div className="space-y-4">
+        {plansList.length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground">Nenhum plano encontrado.</p>
+        ) : (
+          plansList.map((plan) => (
+            <div key={plan.id} className={`bg-card border rounded-xl p-5 space-y-3 ${plan.is_popular ? "border-primary/40" : "border-border"}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display font-bold text-lg">{plan.name}</h3>
+                    {plan.is_popular && (
+                      <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>
+                    )}
+                  </div>
+                  <p className="text-2xl font-display font-bold mt-1">
+                    {plan.price} <span className="text-sm font-normal text-muted-foreground">{plan.period}</span>
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => openEditPlan(plan)}>
+                  <Edit className="w-4 h-4 mr-1" /> Editar
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {plan.features.map((f, i) => (
+                  <span key={i} className="bg-muted/50 text-xs px-2.5 py-1 rounded-full">{f}</span>
+                ))}
+              </div>
+              {plan.payment_link && (
+                <p className="text-xs text-muted-foreground truncate">
+                  <Link2 className="w-3 h-3 inline mr-1" />
+                  {plan.payment_link}
+                </p>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Plan edit dialog */}
+      <Dialog open={planFormOpen} onOpenChange={setPlanFormOpen}>
+        <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="font-display">Editar Plano</DialogTitle>
+            <DialogDescription>Altere os dados do plano. As mudanças serão aplicadas na Home e na página de Assinatura.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Nome do Plano</label>
+              <Input placeholder="Ex: Mensal" value={planForm.name} onChange={e => setPlanForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Preço</label>
+                <Input placeholder="Ex: R$ 29,90" value={planForm.price} onChange={e => setPlanForm(f => ({ ...f, price: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Período</label>
+                <Input placeholder="Ex: /mês" value={planForm.period} onChange={e => setPlanForm(f => ({ ...f, period: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Link de Pagamento</label>
+              <Input placeholder="https://pay.exemplo.com/checkout/..." value={planForm.payment_link} onChange={e => setPlanForm(f => ({ ...f, payment_link: e.target.value }))} />
+              <p className="text-xs text-muted-foreground mt-1">Ao clicar em "Assinar", o usuário será redirecionado para este link.</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Recursos (um por linha)</label>
+              <textarea
+                className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder={"Acesso total ao catálogo\nAté 2 telas simultâneas\nQualidade HD"}
+                value={planForm.features}
+                onChange={e => setPlanForm(f => ({ ...f, features: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" checked={planForm.is_popular} onChange={e => setPlanForm(f => ({ ...f, is_popular: e.target.checked }))} className="rounded border-border" />
+              <label className="text-sm font-medium">Marcar como "Mais Popular"</label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlanFormOpen(false)}>Cancelar</Button>
+            <Button variant="hero" onClick={savePlan}><Save className="w-4 h-4" /> Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+
   const renderPaymentIntegration = () => (
     <div className="animate-fade-in space-y-6 max-w-3xl">
       <div>
@@ -1407,6 +1563,7 @@ const Admin = () => {
           {activeSection === "subscriptions" && renderSubscriptions()}
           {activeSection === "add-admin" && renderAddAdmin()}
           {activeSection === "payment-integration" && renderPaymentIntegration()}
+          {activeSection === "plans" && renderPlans()}
           {activeSection === "sales" && renderSales()}
           {activeSection === "transactions" && renderTransactions()}
           {isContentSection && renderContentManager()}

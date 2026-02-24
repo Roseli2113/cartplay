@@ -1,59 +1,17 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Play, ArrowLeft, Clock, Zap, Crown } from "lucide-react";
+import { usePlans } from "@/hooks/usePlans";
 
-const plans = [
-  {
-    name: "Teste Grátis",
-    price: "R$ 0",
-    period: "1 hora",
-    icon: Clock,
-    features: [
-      "Acesso total ao catálogo por 1 hora",
-      "1 tela simultânea",
-      "Qualidade HD",
-      "Sem compromisso",
-    ],
-    popular: false,
-    cta: "Começar teste grátis",
-    variant: "hero-outline" as const,
-  },
-  {
-    name: "Mensal",
-    price: "R$ 29,90",
-    period: "/mês",
-    icon: Zap,
-    features: [
-      "Acesso total ao catálogo",
-      "Até 2 telas simultâneas",
-      "Qualidade HD",
-      "Canais ao vivo",
-      "Cancele quando quiser",
-    ],
-    popular: false,
-    cta: "Assinar mensal",
-    variant: "hero-outline" as const,
-  },
-  {
-    name: "Anual",
-    price: "R$ 19,90",
-    period: "/mês",
-    icon: Crown,
-    features: [
-      "Tudo do plano mensal",
-      "Até 4 telas simultâneas",
-      "Qualidade 4K",
-      "Download offline",
-      "Economia de 33%",
-      "Suporte prioritário",
-    ],
-    popular: true,
-    cta: "Assinar anual",
-    variant: "hero" as const,
-  },
-];
+const iconMap: Record<string, any> = {
+  trial: Clock,
+  monthly: Zap,
+  annual: Crown,
+};
 
 const Subscription = () => {
+  const { plans, loading } = usePlans();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -83,47 +41,63 @@ const Subscription = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-slide-up">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative bg-card-gradient border rounded-2xl p-6 md:p-8 flex flex-col ${
-                plan.popular ? "border-primary shadow-glow scale-[1.02]" : "border-border"
-              }`}
-            >
-              {plan.popular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
-                  MAIS POPULAR
-                </span>
-              )}
+        {loading ? (
+          <div className="text-center py-12 text-muted-foreground">Carregando planos...</div>
+        ) : (
+          <div className={`grid grid-cols-1 md:grid-cols-${plans.length} gap-6 max-w-5xl mx-auto animate-slide-up`}>
+            {plans.map((plan) => {
+              const Icon = iconMap[plan.slug] || Zap;
+              const variant = plan.is_popular ? "hero" : "hero-outline";
+              return (
+                <div
+                  key={plan.id}
+                  className={`relative bg-card-gradient border rounded-2xl p-6 md:p-8 flex flex-col ${
+                    plan.is_popular ? "border-primary shadow-glow scale-[1.02]" : "border-border"
+                  }`}
+                >
+                  {plan.is_popular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap">
+                      MAIS POPULAR
+                    </span>
+                  )}
 
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${plan.popular ? "bg-primary/20" : "bg-secondary"}`}>
-                  <plan.icon className={`w-5 h-5 ${plan.popular ? "text-primary" : "text-muted-foreground"}`} />
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${plan.is_popular ? "bg-primary/20" : "bg-secondary"}`}>
+                      <Icon className={`w-5 h-5 ${plan.is_popular ? "text-primary" : "text-muted-foreground"}`} />
+                    </div>
+                    <h3 className="text-xl font-display font-bold">{plan.name}</h3>
+                  </div>
+
+                  <div className="mb-6">
+                    <span className="text-4xl font-display font-bold">{plan.price}</span>
+                    <span className="text-muted-foreground ml-1">{plan.period}</span>
+                  </div>
+
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {plan.payment_link ? (
+                    <Button variant={variant as any} size="lg" className="w-full" asChild>
+                      <a href={plan.payment_link} target="_blank" rel="noopener noreferrer">
+                        {plan.slug === "trial" ? "Começar teste grátis" : `Assinar ${plan.name.toLowerCase()}`}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button variant={variant as any} size="lg" className="w-full">
+                      {plan.slug === "trial" ? "Começar teste grátis" : `Assinar ${plan.name.toLowerCase()}`}
+                    </Button>
+                  )}
                 </div>
-                <h3 className="text-xl font-display font-bold">{plan.name}</h3>
-              </div>
-
-              <div className="mb-6">
-                <span className="text-4xl font-display font-bold">{plan.price}</span>
-                <span className="text-muted-foreground ml-1">{plan.period}</span>
-              </div>
-
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Button variant={plan.variant} size="lg" className="w-full">
-                {plan.cta}
-              </Button>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="text-center mt-12 text-sm text-muted-foreground">
           <p>Ao assinar, você concorda com nossos <a href="#" className="text-primary hover:underline">Termos de Uso</a> e <a href="#" className="text-primary hover:underline">Política de Privacidade</a>.</p>
