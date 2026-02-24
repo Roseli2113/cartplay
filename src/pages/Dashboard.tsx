@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
-  Flame, Tv, QrCode, ChevronRight, Shield,
+  Flame, Tv, QrCode, ChevronRight, Shield, Search,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [content, setContent] = useState<ContentCard[]>([]);
   const [playingContent, setPlayingContent] = useState<ContentCard | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -92,10 +93,26 @@ const Dashboard = () => {
       category: categories[i % 4],
     }));
 
+    const filtered = searchQuery
+      ? displayContent.filter((c) => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+      : displayContent;
+
     return (
       <div className="animate-fade-in">
         <h2 className="text-2xl font-display font-bold mb-1">Olá, {profile?.name || "bem-vindo"}! 👋</h2>
-        <p className="text-muted-foreground mb-8">O que você quer assistir hoje?</p>
+        <p className="text-muted-foreground mb-4">O que você quer assistir hoje?</p>
+
+        {/* Barra de pesquisa */}
+        <div className="relative mb-6 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar filmes, séries, canais..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
 
         <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
           {categories.map((cat) => (
@@ -105,49 +122,55 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {displayContent.map((card) => (
+        {/* Cards formato poster/story vertical */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {filtered.map((card) => (
             <div key={card.id} onClick={() => card.stream_url && setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer">
-              <div className="aspect-video bg-muted/50 flex items-center justify-center relative overflow-hidden">
+              <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
                 {card.thumbnail_url ? (
                   <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
                 ) : (
                   <Film className="w-10 h-10 text-muted-foreground/30" />
                 )}
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors flex items-center justify-center">
-                  <Play className="w-10 h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  <Play className="w-10 h-10 text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity fill-current drop-shadow-lg" />
                 </div>
-              </div>
-              <div className="p-3">
-                <h3 className="font-medium text-sm truncate">{card.title}</h3>
-                <span className="text-xs text-muted-foreground">{card.category}</span>
+                {/* Título sobre a imagem na parte inferior */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
+                  <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
+                  <span className="text-[10px] text-white/60">{card.category}</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
-          Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {displayContent.slice(0, 4).map((card, i) => (
-            <div key={`continue-${card.id}`} onClick={() => card.stream_url && setPlayingContent(card)} className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
-              <div className="aspect-video bg-muted/50 flex items-center justify-center">
-                {card.thumbnail_url ? (
-                  <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
-                ) : (
-                  <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
-                )}
-              </div>
-              <div className="p-3">
-                <h3 className="font-medium text-sm truncate">{card.title}</h3>
-                <div className="w-full bg-muted rounded-full h-1 mt-2">
-                  <div className="bg-primary h-1 rounded-full" style={{ width: `${30 + i * 15}%` }} />
+        {!searchQuery && (
+          <>
+            <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
+              Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </h3>
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              {displayContent.slice(0, 6).map((card, i) => (
+                <div key={`continue-${card.id}`} onClick={() => card.stream_url && setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
+                  <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
+                    {card.thumbnail_url ? (
+                      <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
+                      <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
+                      <div className="w-full bg-white/20 rounded-full h-1 mt-1.5">
+                        <div className="bg-primary h-1 rounded-full" style={{ width: `${30 + i * 12}%` }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
     );
   };
