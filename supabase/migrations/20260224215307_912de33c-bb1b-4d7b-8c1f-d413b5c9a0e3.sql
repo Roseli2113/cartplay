@@ -1,0 +1,1 @@
+ALTER TABLE public.subscription_plans ADD COLUMN cta_text text NOT NULL DEFAULT 'Assinar agora';

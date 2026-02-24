@@ -11,6 +11,7 @@ export interface SubscriptionPlan {
   payment_link: string;
   is_popular: boolean;
   sort_order: number;
+  cta_text: string;
 }
 
 export function usePlans() {
