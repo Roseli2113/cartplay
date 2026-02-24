@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
-  Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft,
+  Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft, Volume2, VolumeX,
 } from "lucide-react";
 import YouTubePlayer from "@/components/YouTubePlayer";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,6 +56,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [trailerMuted, setTrailerMuted] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
@@ -422,7 +423,8 @@ const Dashboard = () => {
           <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted">
             {banner.trailer_url ? (
               <iframe
-                src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0`}
+                key={`trailer-${trailerMuted}`}
+                src={`${banner.trailer_url}${banner.trailer_url.includes('?') ? '&' : '?'}autoplay=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&mute=${trailerMuted ? 1 : 0}`}
                 className="absolute inset-0 w-full h-full"
                 style={{ border: 'none' }}
                 allow="autoplay; encrypted-media"
@@ -432,9 +434,19 @@ const Dashboard = () => {
               <img src={banner.banner_url} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-6">
-              <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{banner.title}</h2>
-              {banner.description && <p className="text-white/70 mt-1 max-w-lg text-sm">{banner.description}</p>}
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex items-end justify-between">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-display font-bold text-white">{banner.title}</h2>
+                {banner.description && <p className="text-white/70 mt-1 max-w-lg text-sm">{banner.description}</p>}
+              </div>
+              {banner.trailer_url && (
+                <button
+                  onClick={() => setTrailerMuted(!trailerMuted)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation"
+                >
+                  {trailerMuted ? <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
+                </button>
+              )}
             </div>
           </div>
         )}
