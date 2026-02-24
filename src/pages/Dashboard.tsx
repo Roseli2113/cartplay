@@ -56,6 +56,19 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  // Map sidebar sections to category filters
+  const sectionToCategoryMap: Record<string, string | null> = {
+    live: "Canais",
+  };
+
+  useEffect(() => {
+    if (activeSection in sectionToCategoryMap) {
+      setActiveCategory(sectionToCategoryMap[activeSection]);
+    } else {
+      setActiveCategory(null);
+    }
+  }, [activeSection]);
+
   const renderContent = () => {
     if (activeSection === "tv-app") {
       return (
