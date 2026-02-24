@@ -314,6 +314,48 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          features: string[]
+          id: string
+          is_popular: boolean
+          name: string
+          payment_link: string | null
+          period: string
+          price: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          features?: string[]
+          id?: string
+          is_popular?: boolean
+          name: string
+          payment_link?: string | null
+          period: string
+          price: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          features?: string[]
+          id?: string
+          is_popular?: boolean
+          name?: string
+          payment_link?: string | null
+          period?: string
+          price?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           activated_at: string | null

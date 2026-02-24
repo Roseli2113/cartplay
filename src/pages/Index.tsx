@@ -7,6 +7,7 @@ import {
   UserPlus, CreditCard, CheckCircle,
   Monitor, Flame, QrCode,
 } from "lucide-react";
+import { usePlans } from "@/hooks/usePlans";
 
 const benefits = [
   { icon: Smartphone, title: "Assista em Qualquer Lugar", desc: "No celular, tablet, computador ou Smart TV. Seu entretenimento te acompanha." },
@@ -21,12 +22,11 @@ const steps = [
   { num: "03", icon: CheckCircle, title: "Comece a assistir", desc: "Acesse todo o catálogo imediatamente em qualquer dispositivo." },
 ];
 
-const plans = [
-  { name: "Mensal", price: "R$ 29,90", period: "/mês", features: ["Acesso total ao catálogo", "Até 2 telas simultâneas", "Qualidade HD", "Canais ao vivo"], popular: false },
-  { name: "Anual", price: "R$ 19,90", period: "/mês", features: ["Tudo do plano mensal", "Até 4 telas simultâneas", "Qualidade 4K", "Download offline", "Economia de 33%"], popular: true },
-];
-
 const Index = () => {
+  const { plans, loading } = usePlans();
+  // Show only monthly and annual on the home page
+  const displayPlans = plans.filter(p => p.slug !== "trial");
+
   return (
     <div className="min-h-screen bg-background">
       <LandingHeader />
@@ -120,9 +120,11 @@ const Index = () => {
           <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-4">Escolha seu plano</h2>
           <p className="text-muted-foreground text-center mb-14">Cancele quando quiser. Sem fidelidade.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {plans.map((p) => (
-              <div key={p.name} className={`relative bg-card-gradient border rounded-2xl p-8 ${p.popular ? 'border-primary shadow-glow' : 'border-border'}`}>
-                {p.popular && (
+            {loading ? (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">Carregando planos...</div>
+            ) : displayPlans.map((p) => (
+              <div key={p.id} className={`relative bg-card-gradient border rounded-2xl p-8 ${p.is_popular ? 'border-primary shadow-glow' : 'border-border'}`}>
+                {p.is_popular && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full">MAIS POPULAR</span>
                 )}
                 <h3 className="text-2xl font-display font-bold mb-1">{p.name}</h3>
@@ -138,8 +140,12 @@ const Index = () => {
                     </li>
                   ))}
                 </ul>
-                <Button variant={p.popular ? "hero" : "hero-outline"} className="w-full" size="lg" asChild>
-                  <Link to="/register">Assinar agora</Link>
+                <Button variant={p.is_popular ? "hero" : "hero-outline"} className="w-full" size="lg" asChild>
+                  {p.payment_link ? (
+                    <a href={p.payment_link} target="_blank" rel="noopener noreferrer">Assinar agora</a>
+                  ) : (
+                    <Link to="/register">Assinar agora</Link>
+                  )}
                 </Button>
               </div>
             ))}
