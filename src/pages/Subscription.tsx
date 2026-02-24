@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Play, ArrowLeft, Clock, Zap, Crown } from "lucide-react";
+import { CheckCircle, Play, ArrowLeft, Zap, Crown } from "lucide-react";
 import { usePlans } from "@/hooks/usePlans";
 
 const iconMap: Record<string, any> = {
-  trial: Clock,
   monthly: Zap,
   annual: Crown,
 };
