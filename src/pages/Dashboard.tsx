@@ -448,7 +448,7 @@ const Dashboard = () => {
     return (
       <div className="animate-fade-in">
         {/* Banner/Trailer Hero */}
-        {banner && (banner.banner_url || banner.trailer_url) && activeSection === "home" && (
+        {banner && (banner.banner_url || banner.trailer_url) && activeSection === "home" && !playingContent && (
           <div className="relative rounded-2xl overflow-hidden mb-6 aspect-[21/9] bg-muted" onContextMenu={(e) => e.preventDefault()}>
             {banner.trailer_url ? (
               <>
