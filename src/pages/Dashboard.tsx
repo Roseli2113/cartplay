@@ -420,14 +420,14 @@ const Dashboard = () => {
       {/* Fullscreen Video Player */}
       {playingContent && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm">
-            <div>
-              <h2 className="font-display font-semibold text-white text-lg">{playingContent.title}</h2>
-              <span className="text-xs text-white/60">{playingContent.category}</span>
+          <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 bg-black/80 backdrop-blur-sm safe-area-top">
+            <div className="min-w-0 flex-1 mr-3">
+              <h2 className="font-display font-semibold text-white text-sm sm:text-lg truncate">{playingContent.title}</h2>
+              <span className="text-[10px] sm:text-xs text-white/60">{playingContent.category}</span>
             </div>
             <button
               onClick={() => setPlayingContent(null)}
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 flex items-center justify-center transition-colors flex-shrink-0 touch-manipulation"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -437,18 +437,18 @@ const Dashboard = () => {
               <iframe
                 src={`${playingContent.stream_url.replace('youtube.com', 'youtube-nocookie.com')}${playingContent.stream_url.includes('?') ? '&' : '?'}modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=0&fs=1&controls=1&autoplay=1&playsinline=1`}
                 className="absolute inset-0 w-full h-full"
-                style={{ border: 'none', width: '100vw', height: '100%' }}
+                style={{ border: 'none', width: '100vw', height: '100vh' }}
                 allowFullScreen
-                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen; accelerometer; gyroscope"
                 title={playingContent.title}
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-white/60">
-                <p>Nenhuma URL de streaming disponível</p>
+                <p className="text-sm">Nenhuma URL de streaming disponível</p>
               </div>
             )}
-            <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-28 h-9 bg-gradient-to-tl from-black via-black/80 to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-24 h-8 bg-gradient-to-tl from-black via-black/80 to-transparent z-10 pointer-events-none" />
           </div>
         </div>
       )}
