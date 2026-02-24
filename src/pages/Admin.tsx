@@ -306,6 +306,16 @@ const Admin = () => {
     setSendingTest(false);
   };
 
+  const deleteTransaction = async (id: string) => {
+    const { error } = await supabase.from("payment_transactions" as any).delete().eq("id", id);
+    if (error) {
+      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Transação excluída" });
+    fetchTransactions();
+  };
+
   // ── User Actions ──
   const filteredUsers = users.filter(
     (u) =>
@@ -1188,12 +1198,13 @@ const Admin = () => {
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden md:table-cell">Plano</TableHead>
                   <TableHead className="hidden lg:table-cell">Data</TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTx.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma venda encontrada.</TableCell>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma venda encontrada.</TableCell>
                   </TableRow>
                 ) : (
                   filteredTx.map(tx => {
@@ -1209,6 +1220,11 @@ const Admin = () => {
                         </TableCell>
                         <TableCell className="hidden md:table-cell">{tx.plan || "—"}</TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground">{new Date(tx.created_at).toLocaleString("pt-BR")}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteTransaction(tx.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })
@@ -1257,12 +1273,13 @@ const Admin = () => {
                   <TableHead>Evento</TableHead>
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTx.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma transação encontrada.</TableCell>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma transação encontrada.</TableCell>
                   </TableRow>
                 ) : (
                   filteredTx.map(tx => {
@@ -1279,6 +1296,11 @@ const Admin = () => {
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${st.cls}`}>
                             {st.text}
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteTransaction(tx.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
