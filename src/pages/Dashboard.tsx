@@ -175,8 +175,8 @@ const Dashboard = () => {
 
   // Content card component
   const ContentCardEl = ({ card, showFavBtn = true }: { card: ContentCard; showFavBtn?: boolean }) => (
-    <div className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation relative">
-      <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => setPlayingContent(card)}>
+    <div className="group bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation relative">
+      <div className="aspect-[3/4] sm:aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => setPlayingContent(card)}>
         {card.thumbnail_url ? (
           <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
         ) : (
@@ -212,7 +212,7 @@ const Dashboard = () => {
           <p className="text-sm text-muted-foreground/70 mt-1">Toque no ❤️ nos cards para salvar.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
           {favorites.map((fav) => (
             <ContentCardEl key={fav.id} card={{ id: fav.content_id, title: fav.title, category: fav.category, thumbnail_url: fav.thumbnail_url, stream_url: fav.stream_url }} />
           ))}
@@ -232,7 +232,7 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         <h2 className="text-2xl font-display font-bold mb-1">Continuar Assistindo</h2>
         <p className="text-muted-foreground mb-6">Retome de onde parou.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
           {displayContent.slice(0, 6).map((card, i) => (
             <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
               <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
@@ -484,7 +484,7 @@ const Dashboard = () => {
         </div>
 
         {/* Content grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
           {filtered.map((card) => (
             <ContentCardEl key={card.id} card={card} />
           ))}
@@ -496,7 +496,7 @@ const Dashboard = () => {
             <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
               Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
               {displayContent.slice(0, 6).map((card, i) => (
                 <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
                   <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
