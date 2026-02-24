@@ -541,32 +541,45 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {activeSection === "home" && !searchQuery && !activeCategory && (
-          <>
-            <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
-              Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </h3>
-            <div className="grid w-full min-w-0 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-3">
-              {displayContent.slice(0, 6).map((card, i) => (
-                <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
-                  <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
-                    {card.thumbnail_url ? (
-                      <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <PlayCircle className="w-8 h-8 text-muted-foreground/30" />
-                    )}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-6">
-                      <h3 className="font-medium text-xs text-white truncate">{card.title}</h3>
-                      <div className="w-full bg-white/20 rounded-full h-1 mt-1.5">
-                        <div className="bg-primary h-1 rounded-full" style={{ width: `${30 + i * 12}%` }} />
-                      </div>
-                    </div>
-                  </div>
+        {activeSection === "home" && !searchQuery && !activeCategory && (() => {
+          const categoryBlocks = [
+            { label: "🆕 Novos na CartPlay", filter: null, shuffle: true },
+            { label: "🔥 Novidades", filter: null, shuffle: true },
+            { label: "🎬 Terror", filter: "Terror" },
+            { label: "🇰🇷 Doramas", filter: "Doramas" },
+            { label: "⭐ Premium", filter: "Premium" },
+            { label: "😂 Comédia", filter: "Comédia" },
+            { label: "💥 Ação", filter: "Ação" },
+          ];
+
+          // Helper to get items for a block
+          const getBlockItems = (block: typeof categoryBlocks[0], index: number) => {
+            if (block.filter) {
+              const items = displayContent.filter(c => c.category?.toLowerCase() === block.filter!.toLowerCase());
+              return items.length > 0 ? items.slice(0, 6) : null;
+            }
+            // For non-filter blocks, show shuffled slices of all content
+            const start = index * 6;
+            return displayContent.slice(start, start + 6);
+          };
+
+          return categoryBlocks.map((block, idx) => {
+            const items = getBlockItems(block, idx);
+            if (!items || items.length === 0) return null;
+            return (
+              <div key={block.label}>
+                <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
+                  {block.label} <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </h3>
+                <div className="grid w-full min-w-0 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-3">
+                  {items.map((card) => (
+                    <ContentCardEl key={`${block.label}-${card.id}`} card={card} />
+                  ))}
                 </div>
-              ))}
-            </div>
-          </>
-        )}
+              </div>
+            );
+          });
+        })()}
       </div>
     );
   };
