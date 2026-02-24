@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, ReactNode 
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-type AccessReason = "blocked" | "trial_expired" | "subscription_inactive" | null;
+type AccessReason = "blocked" | "subscription_inactive" | null;
 
 interface AuthContextType {
   user: User | null;
@@ -88,23 +88,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const now = Date.now();
-    const isInactive = subscription.status === "inactive";
+    const isInactive = subscription.status === "inactive" || subscription.plan === "none";
     const paidExpired = subscription.expires_at
       ? now > new Date(subscription.expires_at).getTime()
       : false;
 
-    const trialStartedAt = subscription.trial_started_at ? new Date(subscription.trial_started_at).getTime() : null;
-    const trialHours = Number(subscription.trial_hours ?? 0);
-    const trialExpired =
-      subscription.plan === "trial" &&
-      trialStartedAt !== null &&
-      Number.isFinite(trialStartedAt) &&
-      trialHours > 0 &&
-      (now - trialStartedAt) / (1000 * 60 * 60) >= trialHours;
-
-    if (trialExpired || isInactive || paidExpired) {
+    if (isInactive || paidExpired) {
       setAccessBlocked(true);
-      setAccessReason(trialExpired ? "trial_expired" : "subscription_inactive");
+      setAccessReason("subscription_inactive");
       return;
     }
 

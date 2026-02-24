@@ -692,16 +692,12 @@ const Dashboard = () => {
                 <h3 className="font-display font-semibold text-sm text-destructive">
                   {accessReason === "blocked"
                     ? "Conta bloqueada"
-                    : subscriptionPlan === "trial" || accessReason === "trial_expired"
-                      ? "Período de teste expirado"
-                      : "Assinatura vencida"}
+                    : "Assinatura pendente"}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {accessReason === "blocked"
                     ? "Sua conta foi bloqueada pelo administrador."
-                    : subscriptionPlan === "trial" || accessReason === "trial_expired"
-                      ? "Seu período de teste gratuito acabou. Assine um plano para continuar assistindo."
-                      : "Sua assinatura expirou. Renove para continuar com acesso completo ao catálogo."}
+                    : "Assine um plano para ter acesso ao catálogo completo."}
                 </p>
               </div>
               <Button
@@ -713,9 +709,7 @@ const Dashboard = () => {
                 <CreditCard className="w-4 h-4 mr-1" />
                 {accessReason === "blocked"
                   ? "Ir para início"
-                  : subscriptionPlan === "trial" || accessReason === "trial_expired"
-                    ? "Assinar agora"
-                    : "Renovar assinatura"}
+                  : "Assinar agora"}
               </Button>
             </div>
           )}
