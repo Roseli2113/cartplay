@@ -16,7 +16,7 @@ import {
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
   Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
   Monitor, BookOpen, Image, Wifi, Flame, CreditCard, UserPlus, Clock,
-  Link2, Copy, CheckCircle,
+  Link2, Copy, CheckCircle, History, ShoppingCart, Send, AlertCircle,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,6 +104,8 @@ const adminMenu = [
   { icon: CreditCard, label: "Assinaturas", id: "subscriptions" },
   { icon: UserPlus, label: "+ Admin", id: "add-admin" },
   { icon: Link2, label: "Integração Pagamento", id: "payment-integration" },
+  { icon: ShoppingCart, label: "Vendas", id: "sales" },
+  { icon: History, label: "Histórico Transações", id: "transactions" },
   { icon: BookOpen, label: "Instruções TV App", id: "tv-instructions" },
 ];
 
@@ -149,6 +151,26 @@ const Admin = () => {
   const [adminUsers, setAdminUsers] = useState<{ user_id: string; name: string; email: string }[]>([]);
   const [webhookCopied, setWebhookCopied] = useState(false);
   const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-webhook`;
+
+  // Transactions / Sales state
+  interface TransactionItem {
+    id: string;
+    user_id: string | null;
+    email: string | null;
+    event: string;
+    plan: string | null;
+    status: string;
+    payload: any;
+    created_at: string;
+    user_name?: string;
+    user_email?: string;
+  }
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [txSearch, setTxSearch] = useState("");
+  const [testEmail, setTestEmail] = useState("");
+  const [testEvent, setTestEvent] = useState("payment_approved");
+  const [testPlan, setTestPlan] = useState("monthly");
+  const [sendingTest, setSendingTest] = useState(false);
 
   // Fetch banner
   const fetchBanner = useCallback(async () => {
@@ -240,6 +262,49 @@ const Admin = () => {
   useEffect(() => {
     if (activeSection === "add-admin") fetchAdminUsers();
   }, [activeSection, fetchAdminUsers]);
+
+  // Fetch transactions
+  const fetchTransactions = useCallback(async () => {
+    const { data: txs } = await supabase.from("payment_transactions" as any).select("*").order("created_at", { ascending: false });
+    if (!txs) return;
+    const { data: profiles } = await supabase.from("profiles" as any).select("user_id, name, email");
+    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+    setTransactions((txs as any[]).map((t: any) => {
+      const p = profileMap.get(t.user_id) as any;
+      return { ...t, user_name: p?.name || "", user_email: p?.email || t.email || "" };
+    }));
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === "sales" || activeSection === "transactions") fetchTransactions();
+  }, [activeSection, fetchTransactions]);
+
+  // Send test webhook event
+  const sendTestEvent = async () => {
+    if (!testEmail.trim()) {
+      toast({ title: "Informe o email", variant: "destructive" });
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: testEvent, email: testEmail.trim(), plan: testPlan }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: "Evento de teste enviado! ✅", description: data.message || "Sucesso" });
+        fetchTransactions();
+        fetchSubscriptions();
+      } else {
+        toast({ title: "Erro no teste", description: data.error || "Falha", variant: "destructive" });
+      }
+    } catch (e) {
+      toast({ title: "Erro de conexão", variant: "destructive" });
+    }
+    setSendingTest(false);
+  };
 
   // ── User Actions ──
   const filteredUsers = users.filter(
@@ -1057,6 +1122,176 @@ const Admin = () => {
     </div>
   );
 
+  const renderSales = () => {
+    const filteredTx = transactions.filter(t =>
+      (t.user_name || "").toLowerCase().includes(txSearch.toLowerCase()) ||
+      (t.user_email || "").toLowerCase().includes(txSearch.toLowerCase()) ||
+      (t.email || "").toLowerCase().includes(txSearch.toLowerCase())
+    );
+
+    const statusLabel = (s: string) => {
+      if (s === "paid") return { text: "Pago", cls: "bg-emerald-500/10 text-emerald-400" };
+      if (s === "refused") return { text: "Recusado", cls: "bg-destructive/10 text-destructive" };
+      if (s === "failed") return { text: "Falhou", cls: "bg-destructive/10 text-destructive" };
+      return { text: "Pendente", cls: "bg-yellow-500/10 text-yellow-400" };
+    };
+
+    return (
+      <div className="animate-fade-in space-y-6">
+        <div>
+          <h2 className="text-2xl font-display font-bold mb-1">Vendas</h2>
+          <p className="text-muted-foreground text-sm">{transactions.length} registros de vendas</p>
+        </div>
+
+        {/* Test event sender */}
+        <div className="bg-card border border-primary/20 rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Send className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-display font-semibold">Enviar Evento de Teste</h3>
+              <p className="text-xs text-muted-foreground">Simule um evento de pagamento para testar a integração.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input placeholder="Email do usuário..." value={testEmail} onChange={e => setTestEmail(e.target.value)} />
+            <select value={testEvent} onChange={e => setTestEvent(e.target.value)} className="bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="payment_approved">payment_approved</option>
+              <option value="paid">paid</option>
+              <option value="payment_refused">payment_refused</option>
+              <option value="refunded">refunded</option>
+            </select>
+            <select value={testPlan} onChange={e => setTestPlan(e.target.value)} className="bg-muted/50 border border-border rounded-lg px-3 py-2 text-sm">
+              <option value="monthly">Mensal</option>
+              <option value="annual">Anual</option>
+              <option value="trial">Trial</option>
+            </select>
+          </div>
+          <Button variant="hero" size="sm" disabled={sendingTest} onClick={sendTestEvent}>
+            <Send className="w-4 h-4" /> {sendingTest ? "Enviando..." : "Enviar Evento de Teste"}
+          </Button>
+        </div>
+
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nome ou email..." value={txSearch} onChange={e => setTxSearch(e.target.value)} className="pl-10" />
+        </div>
+
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">Plano</TableHead>
+                  <TableHead className="hidden lg:table-cell">Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTx.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma venda encontrada.</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredTx.map(tx => {
+                    const st = statusLabel(tx.status);
+                    return (
+                      <TableRow key={tx.id}>
+                        <TableCell className="font-medium">{tx.user_name || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{tx.user_email || tx.email || "—"}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${st.cls}`}>
+                            {st.text}
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{tx.plan || "—"}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground">{new Date(tx.created_at).toLocaleString("pt-BR")}</TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTransactions = () => {
+    const filteredTx = transactions.filter(t =>
+      (t.user_name || "").toLowerCase().includes(txSearch.toLowerCase()) ||
+      (t.user_email || "").toLowerCase().includes(txSearch.toLowerCase()) ||
+      (t.event || "").toLowerCase().includes(txSearch.toLowerCase())
+    );
+
+    const statusLabel = (s: string) => {
+      if (s === "paid") return { text: "Pago", cls: "bg-emerald-500/10 text-emerald-400" };
+      if (s === "refused") return { text: "Recusado", cls: "bg-destructive/10 text-destructive" };
+      if (s === "failed") return { text: "Falhou", cls: "bg-destructive/10 text-destructive" };
+      return { text: "Pendente", cls: "bg-yellow-500/10 text-yellow-400" };
+    };
+
+    return (
+      <div className="animate-fade-in space-y-6">
+        <div>
+          <h2 className="text-2xl font-display font-bold mb-1">Histórico de Transações</h2>
+          <p className="text-muted-foreground text-sm">Todos os eventos de pagamento recebidos pelo webhook.</p>
+        </div>
+
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nome, email ou evento..." value={txSearch} onChange={e => setTxSearch(e.target.value)} className="pl-10" />
+        </div>
+
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Evento</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTx.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma transação encontrada.</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredTx.map(tx => {
+                    const st = statusLabel(tx.status);
+                    return (
+                      <TableRow key={tx.id}>
+                        <TableCell className="text-muted-foreground text-xs">{new Date(tx.created_at).toLocaleString("pt-BR")}</TableCell>
+                        <TableCell className="font-medium">{tx.user_email || tx.email || "—"}</TableCell>
+                        <TableCell>
+                          <span className="font-mono text-xs bg-muted/50 px-2 py-0.5 rounded">{tx.event}</span>
+                        </TableCell>
+                        <TableCell>{tx.plan || "—"}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${st.cls}`}>
+                            {st.text}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const isContentSection = contentCategories.some((c) => c.id === activeSection) || ["novos", "novidades", "doramas"].includes(activeSection);
 
   return (
@@ -1116,6 +1351,8 @@ const Admin = () => {
           {activeSection === "subscriptions" && renderSubscriptions()}
           {activeSection === "add-admin" && renderAddAdmin()}
           {activeSection === "payment-integration" && renderPaymentIntegration()}
+          {activeSection === "sales" && renderSales()}
+          {activeSection === "transactions" && renderTransactions()}
           {isContentSection && renderContentManager()}
         </div>
       </main>
