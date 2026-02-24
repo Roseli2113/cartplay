@@ -62,7 +62,7 @@ const Index = () => {
               </Link>
             </Button>
             <Button variant="hero-outline" size="lg" asChild>
-              <Link to="#planos">Ver planos</Link>
+              <a href="#planos" onClick={(e) => { e.preventDefault(); document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' }); }}>Ver planos</a>
             </Button>
           </div>
         </div>
