@@ -80,6 +80,42 @@ export type Database = {
         }
         Relationships: []
       }
+      favorites: {
+        Row: {
+          category: string | null
+          content_id: string
+          content_table: string
+          created_at: string
+          id: string
+          stream_url: string | null
+          thumbnail_url: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          content_id: string
+          content_table: string
+          created_at?: string
+          id?: string
+          stream_url?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          content_id?: string
+          content_table?: string
+          created_at?: string
+          id?: string
+          stream_url?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       football_channels: {
         Row: {
           category: string | null
