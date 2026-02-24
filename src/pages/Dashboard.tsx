@@ -39,7 +39,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchContent = async () => {
-      const tables = ["movies", "series", "cartoons", "live_channels"] as const;
+      const tables = ["movies", "series", "cartoons", "live_channels", "football_channels"] as const;
       const allContent: ContentCard[] = [];
       for (const table of tables) {
         const { data } = await supabase.from(table as any).select("id, title, category, thumbnail_url, stream_url");
