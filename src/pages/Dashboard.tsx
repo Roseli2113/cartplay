@@ -204,7 +204,7 @@ const Dashboard = () => {
 
   // Content card component
   const ContentCardEl = ({ card, showFavBtn = true }: { card: ContentCard; showFavBtn?: boolean }) => (
-    <div className="group bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation relative">
+    <div className="group w-full min-w-0 bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden hover:border-primary/30 transition-all hover:shadow-glow cursor-pointer active:scale-[0.97] touch-manipulation relative">
       <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden" onClick={() => setPlayingContent(card)}>
         {card.thumbnail_url ? (
           <img src={card.thumbnail_url} alt={card.title} className="w-full h-full object-cover" />
@@ -221,10 +221,15 @@ const Dashboard = () => {
       </div>
       {showFavBtn && (
         <button
-          onClick={(e) => { e.stopPropagation(); toggleFavorite(card); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(card);
+          }}
           className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors touch-manipulation"
         >
-          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${favoriteIds.has(card.id) ? 'text-red-500 fill-red-500' : 'text-white/70'}`} />
+          <Heart
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${favoriteIds.has(card.id) ? "text-red-500 fill-red-500" : "text-white/70"}`}
+          />
         </button>
       )}
     </div>
@@ -261,7 +266,7 @@ const Dashboard = () => {
       <div className="animate-fade-in">
         <h2 className="text-2xl font-display font-bold mb-1">Continuar Assistindo</h2>
         <p className="text-muted-foreground mb-6">Retome de onde parou.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
+        <div className="grid w-full min-w-0 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-3">
           {displayContent.slice(0, 6).map((card, i) => (
             <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
               <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
@@ -504,12 +509,20 @@ const Dashboard = () => {
         </div>
 
         {/* Category filters */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 -mx-4 px-4">
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-4 sm:px-4">
           {categories.map((cat) => (
             <button
               key={cat}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setActiveCategory(activeCategory === cat ? null : cat); }}
-              className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 active:scale-95 touch-manipulation ${activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground'}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveCategory(activeCategory === cat ? null : cat);
+              }}
+              className={`px-4 py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 active:scale-95 touch-manipulation ${
+                activeCategory === cat
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground"
+              }`}
             >
               {cat}
             </button>
@@ -517,19 +530,18 @@ const Dashboard = () => {
         </div>
 
         {/* Content grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
+        <div className="grid w-full min-w-0 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-3">
           {filtered.map((card) => (
             <ContentCardEl key={card.id} card={card} />
           ))}
         </div>
 
-        {/* Continue watching section on home */}
         {activeSection === "home" && !searchQuery && !activeCategory && (
           <>
             <h3 className="text-xl font-display font-semibold mt-10 mb-4 flex items-center gap-2">
               Continuar Assistindo <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
+            <div className="grid w-full min-w-0 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-3">
               {displayContent.slice(0, 6).map((card, i) => (
                 <div key={`continue-${card.id}`} onClick={() => setPlayingContent(card)} className="group bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.97] touch-manipulation">
                   <div className="aspect-[2/3] bg-muted/50 flex items-center justify-center relative overflow-hidden">
@@ -601,7 +613,7 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      <main className="flex-1 min-h-screen">
+      <main className="flex-1 min-h-screen min-w-0 w-full">
         <header className="h-16 border-b border-border flex items-center px-4 lg:px-8 sticky top-0 bg-background/80 backdrop-blur-md z-30">
           <button className="lg:hidden mr-4 text-muted-foreground" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
