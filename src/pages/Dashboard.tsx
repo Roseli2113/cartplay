@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
   Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft, Volume2, VolumeX,
+  AlertTriangle,
 } from "lucide-react";
 import VideoPlayer from "@/components/player/VideoPlayer";
 import { extractVideoId } from "@/components/player/YouTubeProvider";
@@ -88,11 +89,45 @@ const Dashboard = () => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [trailerMuted, setTrailerMuted] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [subscriptionExpired, setSubscriptionExpired] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlan] = useState<string | null>(null);
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
 
   // Track this user's online presence
   usePresenceTrack(user?.id);
+
+  // Check subscription expiry
+  useEffect(() => {
+    if (!user) return;
+    const checkSubscription = async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!data) return;
+      setSubscriptionPlan(data.plan);
+      
+      if (data.plan === "trial") {
+        // Check trial hours
+        const started = new Date(data.trial_started_at).getTime();
+        const elapsed = (Date.now() - started) / (1000 * 60 * 60);
+        if (elapsed >= data.trial_hours || data.status === "inactive") {
+          setSubscriptionExpired(true);
+        }
+      } else if (data.expires_at) {
+        // Check 30-day expiry for paid plans
+        const expiresAt = new Date(data.expires_at).getTime();
+        if (Date.now() > expiresAt || data.status === "inactive") {
+          setSubscriptionExpired(true);
+        }
+      } else if (data.status === "inactive") {
+        setSubscriptionExpired(true);
+      }
+    };
+    checkSubscription();
+  }, [user]);
 
   // Track section navigation for back button
   const handleSectionChange = (section: string) => {
@@ -651,6 +686,32 @@ const Dashboard = () => {
           </h1>
         </header>
         <div className="p-3 sm:p-4 lg:p-8 overflow-hidden">
+          {subscriptionExpired && (
+            <div className="mb-6 bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 animate-fade-in">
+              <div className="w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-display font-semibold text-sm text-destructive">
+                  {subscriptionPlan === "trial" ? "Período de teste expirado" : "Assinatura vencida"}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {subscriptionPlan === "trial"
+                    ? "Seu período de teste gratuito acabou. Assine um plano para continuar assistindo."
+                    : "Sua assinatura expirou. Renove para continuar com acesso completo ao catálogo."}
+                </p>
+              </div>
+              <Button
+                variant="hero"
+                size="sm"
+                onClick={() => navigate("/subscription")}
+                className="flex-shrink-0 whitespace-nowrap"
+              >
+                <CreditCard className="w-4 h-4 mr-1" />
+                {subscriptionPlan === "trial" ? "Assinar agora" : "Renovar assinatura"}
+              </Button>
+            </div>
+          )}
           {renderContent()}
         </div>
       </main>
