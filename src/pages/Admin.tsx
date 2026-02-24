@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
 import {
   Play, Home, Users, Film, Tv, Radio, Shield, LogOut, Menu, X,
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
-  Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft,
+  Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -88,6 +88,24 @@ const Admin = () => {
   const [editingContent, setEditingContent] = useState<ContentItem | null>(null);
   const [contentFormOpen, setContentFormOpen] = useState(false);
   const [contentForm, setContentForm] = useState({ title: "", description: "", stream_url: "", thumbnail_url: "" });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadThumbnail = async (file: File) => {
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const filePath = `${activeSection}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("thumbnails").upload(filePath, file);
+    if (error) {
+      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("thumbnails").getPublicUrl(filePath);
+    setContentForm((f) => ({ ...f, thumbnail_url: urlData.publicUrl }));
+    setUploading(false);
+    toast({ title: "Imagem enviada com sucesso!" });
+  };
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
@@ -547,8 +565,43 @@ const Admin = () => {
               <Input placeholder="https://..." value={contentForm.stream_url} onChange={(e) => setContentForm((f) => ({ ...f, stream_url: e.target.value }))} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">URL da Thumbnail</label>
-              <Input placeholder="https://... (opcional)" value={contentForm.thumbnail_url} onChange={(e) => setContentForm((f) => ({ ...f, thumbnail_url: e.target.value }))} />
+              <label className="text-sm font-medium mb-1.5 block">Imagem / Thumbnail</label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadThumbnail(file);
+                }}
+              />
+              <div className="flex gap-2 mb-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1"
+                >
+                  <Upload className="w-4 h-4 mr-1" />
+                  {uploading ? "Enviando..." : "Enviar Imagem"}
+                </Button>
+              </div>
+              {contentForm.thumbnail_url && (
+                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+                  <img src={contentForm.thumbnail_url} alt="Preview" className="w-full h-32 object-cover" />
+                  <button
+                    onClick={() => setContentForm((f) => ({ ...f, thumbnail_url: "" }))}
+                    className="absolute top-1 right-1 bg-background/80 rounded-full p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1.5">Ou cole uma URL:</p>
+              <Input placeholder="https://... (opcional)" value={contentForm.thumbnail_url} onChange={(e) => setContentForm((f) => ({ ...f, thumbnail_url: e.target.value }))} className="mt-1" />
             </div>
           </div>
           <DialogFooter>
