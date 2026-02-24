@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,10 @@ import {
 import {
   Play, Home, Users, Film, Tv, Radio, Shield, LogOut, Menu, X,
   MoreVertical, Eye, Ban, Trash2, Search, Plus, Edit, Save,
-  Clapperboard, Baby, Dribbble, ChevronRight, ArrowLeft, Upload, ImageIcon,
+  Clapperboard, Baby, Dribbble, ChevronRight, ChevronLeft, ArrowLeft, Upload, ImageIcon,
   Monitor, BookOpen, Image, Wifi, Flame, CreditCard, UserPlus, Clock,
   Link2, Copy, CheckCircle, History, ShoppingCart, Send, AlertCircle, RefreshCw,
+  Calendar,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +33,7 @@ interface ProfileUser {
   email: string;
   phone: string;
   created_at: string;
-  status: "active" | "blocked";
+  is_blocked: boolean;
 }
 
 interface ContentItem {
@@ -125,6 +126,14 @@ const Admin = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userDateFrom, setUserDateFrom] = useState("");
+  const [userDateTo, setUserDateTo] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const USERS_PER_PAGE = 100;
+
+  // Content pagination
+  const [contentPage, setContentPage] = useState(1);
+  const CONTENT_PER_PAGE = 100;
 
   // Content state
   const [content, setContent] = useState<ContentItem[]>([]);
@@ -231,7 +240,7 @@ const Admin = () => {
         email: p.email || "",
         phone: p.phone || "",
         created_at: p.created_at,
-        status: "active" as const,
+        is_blocked: p.is_blocked || false,
       })));
     }
   }, []);
@@ -274,7 +283,7 @@ const Admin = () => {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
   useEffect(() => {
-    if (tableMap[activeSection]) fetchContent();
+    if (tableMap[activeSection]) { setContentPage(1); fetchContent(); }
   }, [activeSection, fetchContent]);
   useEffect(() => {
     if (activeSection === "subscriptions") fetchSubscriptions();
@@ -404,12 +413,27 @@ const Admin = () => {
   };
 
   // ── User Actions ──
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.phone.includes(userSearch)
-  );
+  const filteredUsers = useMemo(() => {
+    let filtered = users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+        u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+        u.phone.includes(userSearch)
+    );
+    if (userDateFrom) {
+      const from = new Date(userDateFrom);
+      filtered = filtered.filter(u => new Date(u.created_at) >= from);
+    }
+    if (userDateTo) {
+      const to = new Date(userDateTo);
+      to.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(u => new Date(u.created_at) <= to);
+    }
+    return filtered;
+  }, [users, userSearch, userDateFrom, userDateTo]);
+
+  const totalUserPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE));
+  const paginatedUsers = filteredUsers.slice((userPage - 1) * USERS_PER_PAGE, userPage * USERS_PER_PAGE);
 
   const deleteUser = async () => {
     if (!userToDelete) return;
@@ -424,10 +448,23 @@ const Admin = () => {
     setDeleteConfirmOpen(false);
   };
 
+  const toggleBlockUser = async (user: ProfileUser) => {
+    const newBlocked = !user.is_blocked;
+    const { error } = await supabase.from("profiles" as any).update({ is_blocked: newBlocked } as any).eq("id", user.id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: newBlocked ? "Usuário bloqueado" : "Usuário desbloqueado" });
+    fetchUsers();
+  };
+
   // ── Content Actions ──
   const filteredContent = content.filter((c) =>
     c.title.toLowerCase().includes(contentSearch.toLowerCase())
   );
+  const totalContentPages = Math.max(1, Math.ceil(filteredContent.length / CONTENT_PER_PAGE));
+  const paginatedContent = filteredContent.slice((contentPage - 1) * CONTENT_PER_PAGE, contentPage * CONTENT_PER_PAGE);
 
   const openAddContent = () => {
     setEditingContent(null);
@@ -573,8 +610,8 @@ const Admin = () => {
   const stats = [
     { label: "Online Agora", value: onlineCount, icon: Wifi, highlight: true },
     { label: "Total Usuários", value: users.length, icon: Users },
-    { label: "Ativos", value: users.filter((u) => u.status === "active").length, icon: Shield },
-    { label: "Bloqueados", value: users.filter((u) => u.status === "blocked").length, icon: Ban },
+    { label: "Ativos", value: users.filter((u) => !u.is_blocked).length, icon: Shield },
+    { label: "Bloqueados", value: users.filter((u) => u.is_blocked).length, icon: Ban },
     { label: "Conteúdos", value: content.length, icon: Film },
   ];
 
@@ -641,8 +678,8 @@ const Admin = () => {
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">{user.email}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === "active" ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
-                      {user.status === "active" ? "Ativo" : "Bloqueado"}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${!user.is_blocked ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                      {!user.is_blocked ? "Ativo" : "Bloqueado"}
                     </span>
                   </TableCell>
                 </TableRow>
@@ -659,12 +696,25 @@ const Admin = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold mb-1">Gerenciar Usuários</h2>
-          <p className="text-muted-foreground text-sm">{users.length} usuários cadastrados</p>
+          <p className="text-muted-foreground text-sm">{filteredUsers.length} de {users.length} usuários</p>
         </div>
       </div>
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Buscar por nome, email ou celular..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-10" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nome, email ou celular..." value={userSearch} onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }} className="pl-10" />
+        </div>
+        <div className="flex gap-2 items-center">
+          <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <Input type="date" value={userDateFrom} onChange={e => { setUserDateFrom(e.target.value); setUserPage(1); }} className="w-36 text-xs" />
+          <span className="text-muted-foreground text-xs">até</span>
+          <Input type="date" value={userDateTo} onChange={e => { setUserDateTo(e.target.value); setUserPage(1); }} className="w-36 text-xs" />
+          {(userDateFrom || userDateTo) && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setUserDateFrom(""); setUserDateTo(""); setUserPage(1); }}>
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -680,20 +730,20 @@ const Admin = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.length === 0 ? (
+              {paginatedUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum usuário encontrado.</TableCell>
                 </TableRow>
               ) : (
-                filteredUsers.map((user) => (
+                paginatedUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{user.phone}</TableCell>
                     <TableCell className="hidden lg:table-cell text-muted-foreground">{new Date(user.created_at).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === "active" ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
-                        {user.status === "active" ? "Ativo" : "Bloqueado"}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${!user.is_blocked ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                        {!user.is_blocked ? "Ativo" : "Bloqueado"}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -706,6 +756,9 @@ const Admin = () => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setSelectedUser(user); setDetailsOpen(true); }}>
                             <Eye className="w-4 h-4 mr-2" /> Ver Detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toggleBlockUser(user)}>
+                            <Ban className="w-4 h-4 mr-2" /> {user.is_blocked ? "Desbloquear" : "Bloquear"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
@@ -723,6 +776,19 @@ const Admin = () => {
           </Table>
         </div>
       </div>
+      {totalUserPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Página {userPage} de {totalUserPages}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={userPage <= 1} onClick={() => setUserPage(p => p - 1)}>
+              <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+            </Button>
+            <Button variant="outline" size="sm" disabled={userPage >= totalUserPages} onClick={() => setUserPage(p => p + 1)}>
+              Próximo <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -742,15 +808,15 @@ const Admin = () => {
         </div>
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar conteúdo..." value={contentSearch} onChange={(e) => setContentSearch(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar conteúdo..." value={contentSearch} onChange={(e) => { setContentSearch(e.target.value); setContentPage(1); }} className="pl-10" />
         </div>
 
         {/* Mobile: card list / Desktop: table */}
         <div className="block sm:hidden space-y-3">
-          {filteredContent.length === 0 ? (
+          {paginatedContent.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground">Nenhum conteúdo encontrado.</p>
           ) : (
-            filteredContent.map((item) => (
+            paginatedContent.map((item) => (
               <div key={item.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
                 <div className="w-12 h-16 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
                   {item.thumbnail_url ? (
@@ -789,12 +855,12 @@ const Admin = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredContent.length === 0 ? (
+                {paginatedContent.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhum conteúdo encontrado.</TableCell>
                   </TableRow>
                 ) : (
-                  filteredContent.map((item) => (
+                  paginatedContent.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.title}</TableCell>
                       <TableCell>
@@ -818,6 +884,19 @@ const Admin = () => {
             </Table>
           </div>
         </div>
+        {totalContentPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Página {contentPage} de {totalContentPages} ({filteredContent.length} itens)</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={contentPage <= 1} onClick={() => setContentPage(p => p - 1)}>
+                <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+              </Button>
+              <Button variant="outline" size="sm" disabled={contentPage >= totalContentPages} onClick={() => setContentPage(p => p + 1)}>
+                Próximo <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1593,8 +1672,8 @@ const Admin = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Status</p>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${selectedUser.status === "active" ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
-                    {selectedUser.status === "active" ? "Ativo" : "Bloqueado"}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${!selectedUser.is_blocked ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                    {!selectedUser.is_blocked ? "Ativo" : "Bloqueado"}
                   </span>
                 </div>
                 <div>
@@ -1615,6 +1694,9 @@ const Admin = () => {
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => { toggleBlockUser(selectedUser); setDetailsOpen(false); }}>
+                  <Ban className="w-4 h-4 mr-1" /> {selectedUser.is_blocked ? "Desbloquear" : "Bloquear"}
+                </Button>
                 <Button variant="destructive" size="sm" onClick={() => { setUserToDelete(selectedUser.id); setDetailsOpen(false); setDeleteConfirmOpen(true); }}>
                   <Trash2 className="w-4 h-4 mr-1" /> Excluir
                 </Button>
