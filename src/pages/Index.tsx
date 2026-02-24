@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingHeader from "@/components/LandingHeader";
 import heroBg from "@/assets/hero-bg.jpg";
+import dashboardPreview from "@/assets/dashboard-preview.png";
 import {
   Play, Smartphone, Layers, Tv, RefreshCw,
   UserPlus, CreditCard, CheckCircle,
@@ -53,6 +54,9 @@ const Index = () => {
             <Button variant="hero-outline" size="lg" asChild>
               <Link to="#planos">Ver planos</Link>
             </Button>
+          </div>
+          <div className="mt-12 max-w-4xl mx-auto rounded-xl overflow-hidden border border-border shadow-2xl">
+            <img src={dashboardPreview} alt="CartPlay - Prévia da plataforma" className="w-full h-auto" />
           </div>
         </div>
       </section>
