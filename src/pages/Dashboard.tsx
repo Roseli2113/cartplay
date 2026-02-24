@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
-  Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff,
+  Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +20,7 @@ const menuItems = [
   { icon: PlayCircle, label: "Continuar Assistindo", id: "continue" },
   { icon: Radio, label: "Canais ao Vivo", id: "live" },
   { icon: Monitor, label: "Baixar App para TV", id: "tv-app" },
+  { icon: CreditCard, label: "Assinatura", id: "subscription" },
   { icon: User, label: "Perfil", id: "profile" },
 ];
 
@@ -214,7 +217,120 @@ const Dashboard = () => {
     );
   };
 
+  // Profile state
+  const [profileName, setProfileName] = useState(profile?.name || "");
+  const [profileEmail, setProfileEmail] = useState(profile?.email || "");
+  const [profilePhone, setProfilePhone] = useState(profile?.phone || "");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
+
+  useEffect(() => {
+    if (profile) {
+      setProfileName(profile.name || "");
+      setProfileEmail(profile.email || "");
+      setProfilePhone(profile.phone || "");
+    }
+  }, [profile]);
+
+  // Fetch avatar
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("avatar_url").eq("user_id", user.id).maybeSingle();
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+    };
+    fetchAvatar();
+  }, [user]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setAvatarUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage.from("thumbnails").upload(path, file, { upsert: true });
+    if (uploadError) {
+      toast({ title: "Erro ao enviar foto", variant: "destructive" });
+      setAvatarUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("thumbnails").getPublicUrl(path);
+    const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+    await supabase.from("profiles").update({ avatar_url: newUrl }).eq("user_id", user.id);
+    setAvatarUrl(newUrl);
+    toast({ title: "Foto atualizada!" });
+    setAvatarUploading(false);
+  };
+
+  const handleProfileSave = async () => {
+    if (!user) return;
+    setProfileSaving(true);
+    const { error } = await supabase.from("profiles").update({
+      name: profileName,
+      email: profileEmail,
+      phone: profilePhone,
+    }).eq("user_id", user.id);
+    if (error) {
+      toast({ title: "Erro ao salvar perfil", variant: "destructive" });
+    } else {
+      toast({ title: "Perfil atualizado com sucesso!" });
+    }
+    setProfileSaving(false);
+  };
+
+  const renderProfile = () => (
+    <div className="animate-fade-in max-w-lg">
+      <h2 className="text-2xl font-display font-bold mb-1">Meu Perfil</h2>
+      <p className="text-muted-foreground mb-8">Edite suas informações pessoais.</p>
+
+      <div className="flex flex-col items-center mb-8">
+        <div className="relative group">
+          <Avatar className="w-24 h-24 border-2 border-border">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} alt="Avatar" />
+            ) : null}
+            <AvatarFallback className="text-2xl font-display bg-primary/10 text-primary">
+              {(profileName || "U").charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+            {avatarUploading ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={avatarUploading} />
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">Clique para alterar a foto</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-foreground mb-1.5 block">Nome</label>
+          <Input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Seu nome" />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail</label>
+          <Input value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} placeholder="seu@email.com" type="email" />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground mb-1.5 block">Telefone</label>
+          <Input value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} placeholder="(00) 00000-0000" />
+        </div>
+        <Button variant="hero" className="w-full mt-4" onClick={handleProfileSave} disabled={profileSaving}>
+          {profileSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+          Salvar alterações
+        </Button>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
+    if (activeSection === "profile") return renderProfile();
+    if (activeSection === "subscription") { navigate("/subscription"); return null; }
+
     if (activeSection === "tv-app") {
       return (
         <div className="animate-fade-in">
