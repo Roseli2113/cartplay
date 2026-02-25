@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePresenceTrack } from "@/hooks/usePresence";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const categories = ["Filmes", "Séries", "Desenhos", "Canais", "Futebol"];
 
@@ -726,6 +727,7 @@ const Dashboard = () => {
           onClose={() => setPlayingContent(null)}
         />
       )}
+      <WhatsAppButton />
     </div>
   );
 };
