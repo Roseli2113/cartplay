@@ -657,9 +657,9 @@ const Dashboard = () => {
             {menuItems.find((m) => m.id === activeSection)?.label || "Início"}
           </h1>
         </header>
-        <div className="p-3 sm:p-4 lg:p-8 overflow-hidden">
+        <div key={activeSection} className="p-3 sm:p-4 lg:p-8 overflow-hidden animate-fade-in">
           {accessBlocked && (
-            <div className="mb-6 bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 animate-fade-in">
+            <div className="mb-6 bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-destructive" />
               </div>
