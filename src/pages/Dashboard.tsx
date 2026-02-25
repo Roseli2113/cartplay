@@ -460,12 +460,17 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground mb-4">Disponível na loja Fire TV</p>
               <Button variant="hero" size="sm" className="w-full">Instalar</Button>
             </div>
-            <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
+             <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
               <QrCode className="w-10 h-10 text-primary mx-auto mb-3" />
               <h3 className="font-display font-semibold mb-2">QR Code</h3>
               <p className="text-xs text-muted-foreground mb-4">Escaneie com seu celular</p>
-              <div className="w-24 h-24 bg-muted rounded-lg mx-auto flex items-center justify-center">
-                <QrCode className="w-16 h-16 text-muted-foreground/50" />
+              <div className="w-24 h-24 rounded-lg mx-auto overflow-hidden">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent("https://cartplay.lovable.app")}&bgcolor=1a1a2e&color=ffffff&format=png`}
+                  alt="QR Code para acessar CartPlay"
+                  className="w-full h-full"
+                  loading="lazy"
+                />
               </div>
             </div>
           </div>
