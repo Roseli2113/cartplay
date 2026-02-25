@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Play, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ const Register = () => {
           </p>
         </div>
       </div>
+      <WhatsAppButton />
     </div>
   );
 };
