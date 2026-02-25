@@ -16,6 +16,7 @@ import {
   Monitor, Flame, QrCode,
 } from "lucide-react";
 import { usePlans } from "@/hooks/usePlans";
+import { useHomePresenceTrack } from "@/hooks/usePresence";
 
 const benefits = [
   { icon: Smartphone, title: "Assista em Qualquer Lugar", desc: "No celular, tablet, computador ou Smart TV. Seu entretenimento te acompanha." },
@@ -40,6 +41,7 @@ const steps = [
 
 const Index = () => {
   const { plans, loading } = usePlans();
+  useHomePresenceTrack();
   // Show only monthly and annual on the home page
   const displayPlans = plans.filter(p => p.slug !== "trial");
 
