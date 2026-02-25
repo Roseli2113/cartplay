@@ -23,7 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { usePresenceCount } from "@/hooks/usePresence";
+import { usePresenceCount, useHomePresenceCount } from "@/hooks/usePresence";
 
 // ─── Types ──────────────────────────────────────────────────────
 interface ProfileUser {
@@ -120,6 +120,7 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const onlineCount = usePresenceCount();
+  const homeVisitors = useHomePresenceCount();
 
   // Users state
   const [users, setUsers] = useState<ProfileUser[]>([]);
@@ -633,6 +634,7 @@ const Admin = () => {
   // ── Stats ──
   const stats = [
     { label: "Online Agora", value: onlineCount, icon: Wifi, highlight: true },
+    { label: "Visitantes Home", value: homeVisitors, icon: Eye, highlight: true },
     { label: "Total Usuários", value: users.length, icon: Users },
     { label: "Ativos", value: users.filter((u) => !u.is_blocked).length, icon: Shield },
     { label: "Bloqueados", value: users.filter((u) => u.is_blocked).length, icon: Ban },
@@ -646,7 +648,7 @@ const Admin = () => {
         <h2 className="text-2xl font-display font-bold mb-1">Painel Administrativo</h2>
         <p className="text-muted-foreground">Visão geral da plataforma CartPlay.</p>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {stats.map((s) => (
           <div key={s.label} className={`bg-card border rounded-xl p-5 hover:border-primary/20 transition-colors ${"highlight" in s && s.highlight ? "border-emerald-500/40 bg-emerald-500/5" : "border-border"}`}>
             <div className="flex items-center gap-3 mb-3">
