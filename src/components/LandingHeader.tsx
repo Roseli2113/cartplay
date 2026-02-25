@@ -17,6 +17,9 @@ const LandingHeader = () => {
           </div>
           <div className="flex items-center justify-center gap-3 pb-2 sm:pb-0">
             <Button variant="ghost" size="sm" asChild>
+              <Link to="/install">Instalar App</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
               <Link to="/login">Entrar</Link>
             </Button>
             <Button variant="hero" size="sm" asChild className="whitespace-nowrap">
