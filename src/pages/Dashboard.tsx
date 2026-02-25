@@ -52,7 +52,7 @@ const menuItems = [
   { icon: Heart, label: "Favoritos", id: "favorites" },
   { icon: PlayCircle, label: "Continuar Assistindo", id: "continue" },
   { icon: Radio, label: "Canais ao Vivo", id: "live" },
-  { icon: Monitor, label: "Baixar App para TV", id: "tv-app" },
+  { icon: Monitor, label: "Instalar App", id: "tv-app" },
   { icon: CreditCard, label: "Assinatura", id: "subscription" },
   { icon: User, label: "Perfil", id: "profile" },
 ];
@@ -443,39 +443,8 @@ const Dashboard = () => {
     if (activeSection === "subscription") { navigate("/subscription"); return null; }
 
     if (activeSection === "tv-app") {
-      return (
-        <div className="animate-fade-in">
-          <h2 className="text-2xl font-display font-bold mb-2">Baixar App para TV</h2>
-          <p className="text-muted-foreground mb-8 max-w-lg">Instale o aplicativo na sua Smart TV e aproveite todo o catálogo na tela grande.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl">
-            <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
-              <Monitor className="w-10 h-10 text-primary mx-auto mb-3" />
-              <h3 className="font-display font-semibold mb-2">Android TV</h3>
-              <p className="text-xs text-muted-foreground mb-4">Baixe o APK diretamente</p>
-              <Button variant="hero" size="sm" className="w-full">Baixar APK</Button>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
-              <Flame className="w-10 h-10 text-primary mx-auto mb-3" />
-              <h3 className="font-display font-semibold mb-2">Fire TV</h3>
-              <p className="text-xs text-muted-foreground mb-4">Disponível na loja Fire TV</p>
-              <Button variant="hero" size="sm" className="w-full">Instalar</Button>
-            </div>
-             <div className="bg-card border border-border rounded-xl p-6 text-center hover:border-primary/30 transition-colors">
-              <QrCode className="w-10 h-10 text-primary mx-auto mb-3" />
-              <h3 className="font-display font-semibold mb-2">QR Code</h3>
-              <p className="text-xs text-muted-foreground mb-4">Escaneie com seu celular</p>
-              <div className="w-24 h-24 rounded-lg mx-auto overflow-hidden">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent("https://cartplay.lovable.app")}&bgcolor=1a1a2e&color=ffffff&format=png`}
-                  alt="QR Code para acessar CartPlay"
-                  className="w-full h-full"
-                  loading="lazy"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+      navigate("/install");
+      return null;
     }
 
     if (activeSection === "favorites") return renderFavorites();
