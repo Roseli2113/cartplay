@@ -347,6 +347,7 @@ const Admin = () => {
     if (data) setPlansList(data as unknown as PlanItem[]);
   }, []);
 
+  useEffect(() => { fetchPlans(); }, [fetchPlans]);
   useEffect(() => {
     if (activeSection === "plans") fetchPlans();
   }, [activeSection, fetchPlans]);
@@ -617,6 +618,14 @@ const Admin = () => {
     return `${remaining.toFixed(1)}h restantes`;
   };
 
+  // Plan display helper
+  const planDisplayName = (slug?: string) => {
+    if (!slug || slug === "none" || slug === "trial") return "Não pagou";
+    const found = plansList.find(p => p.slug === slug);
+    return found ? found.name : slug;
+  };
+  const isPaidPlan = (slug?: string) => !!slug && slug !== "none" && slug !== "trial";
+
   // ── Stats ──
   const stats = [
     { label: "Online Agora", value: onlineCount, icon: Wifi, highlight: true },
@@ -691,13 +700,13 @@ const Admin = () => {
                   <TableCell className="hidden sm:table-cell text-muted-foreground">{user.email}</TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.subscription_plan === "none" || !user.subscription_plan
+                      !isPaidPlan(user.subscription_plan)
                         ? "bg-muted text-muted-foreground"
                         : user.subscription_status === "active"
                           ? "bg-primary/10 text-primary"
                           : "bg-destructive/10 text-destructive"
                     }`}>
-                      {user.subscription_plan === "none" || !user.subscription_plan ? "Não pagou" : user.subscription_plan}
+                      {planDisplayName(user.subscription_plan)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -767,13 +776,13 @@ const Admin = () => {
                     <TableCell className="hidden lg:table-cell text-muted-foreground">{new Date(user.created_at).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.subscription_plan === "none" || !user.subscription_plan
+                        !isPaidPlan(user.subscription_plan)
                           ? "bg-muted text-muted-foreground"
                           : user.subscription_status === "active"
                             ? "bg-primary/10 text-primary"
                             : "bg-destructive/10 text-destructive"
                       }`}>
-                        {user.subscription_plan === "none" || !user.subscription_plan ? "Não pagou" : user.subscription_plan}
+                        {planDisplayName(user.subscription_plan)}
                       </span>
                     </TableCell>
                     <TableCell>
