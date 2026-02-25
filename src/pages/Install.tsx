@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import LandingHeader from "@/components/LandingHeader";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Monitor, Smartphone, Laptop, Tv, Flame, Download,
   Play, ChevronRight, QrCode, ArrowLeft, Globe,
@@ -87,9 +88,24 @@ const devices = [
   },
 ];
 
+const BackToDashboard = () => {
+  const { user } = useAuth();
+  if (!user) return null;
+  return (
+    <div className="fixed top-20 left-4 z-40 animate-fade-in">
+      <Button variant="ghost" size="sm" asChild>
+        <Link to="/dashboard">
+          <ArrowLeft className="w-4 h-4" /> Voltar ao Dashboard
+        </Link>
+      </Button>
+    </div>
+  );
+};
+
 const Install = () => {
   return (
     <div className="min-h-screen bg-background">
+      <BackToDashboard />
       <LandingHeader />
 
       <main className="pt-28 pb-20">
