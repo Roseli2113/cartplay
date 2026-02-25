@@ -13,6 +13,7 @@ import ConfirmEmail from "./pages/ConfirmEmail";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import Subscription from "./pages/Subscription";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/install" element={<Install />} />
             <Route path="/register" element={<Register />} />
             <Route path="/confirm-email" element={<ConfirmEmail />} />
             <Route path="/dashboard" element={
