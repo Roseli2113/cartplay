@@ -449,12 +449,16 @@ const Admin = () => {
 
   const deleteUser = async () => {
     if (!userToDelete) return;
-    const { error } = await supabase.from("profiles" as any).delete().eq("id", userToDelete);
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Usuário excluído" });
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: userToDelete },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Usuário excluído completamente" });
       fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
     }
     setUserToDelete(null);
     setDeleteConfirmOpen(false);
@@ -806,7 +810,7 @@ const Admin = () => {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
-                            onClick={() => { setUserToDelete(user.id); setDeleteConfirmOpen(true); }}
+                            onClick={() => { setUserToDelete(user.user_id); setDeleteConfirmOpen(true); }}
                           >
                             <Trash2 className="w-4 h-4 mr-2" /> Excluir
                           </DropdownMenuItem>
@@ -1741,7 +1745,7 @@ const Admin = () => {
                 <Button variant="outline" size="sm" onClick={() => { toggleBlockUser(selectedUser); setDetailsOpen(false); }}>
                   <Ban className="w-4 h-4 mr-1" /> {selectedUser.is_blocked ? "Desbloquear" : "Bloquear"}
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => { setUserToDelete(selectedUser.id); setDetailsOpen(false); setDeleteConfirmOpen(true); }}>
+                <Button variant="destructive" size="sm" onClick={() => { setUserToDelete(selectedUser.user_id); setDetailsOpen(false); setDeleteConfirmOpen(true); }}>
                   <Trash2 className="w-4 h-4 mr-1" /> Excluir
                 </Button>
               </div>
