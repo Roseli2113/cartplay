@@ -31,8 +31,7 @@ const Register = () => {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." });
-      navigate("/login");
+      navigate("/confirm-email");
     }
   };
 
