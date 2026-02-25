@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const now = Date.now();
-    const isInactive = subscription.status === "inactive" || subscription.plan === "none";
+    const isInactive = subscription.status === "inactive" || subscription.plan === "none" || subscription.plan === "trial";
     const paidExpired = subscription.expires_at
       ? now > new Date(subscription.expires_at).getTime()
       : false;
