@@ -212,6 +212,7 @@ const Index = () => {
               <span className="font-display font-bold text-foreground">CartPlay</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
+              <Link to="/install" className="hover:text-foreground transition-colors">Instalar App</Link>
               <a href="#" className="hover:text-foreground transition-colors">Sobre</a>
               <a href="#" className="hover:text-foreground transition-colors">Termos de Uso</a>
               <a href="#" className="hover:text-foreground transition-colors">Privacidade</a>
