@@ -60,6 +60,8 @@ const devices = [
       "Abra o CartPlay e faça login com sua conta.",
     ],
     showQR: true,
+    actionLabel: "Baixar APK",
+    actionUrl: "https://cartplay.lovable.app",
   },
   {
     id: "fire-tv",
@@ -69,10 +71,12 @@ const devices = [
       'Na Fire TV, vá em Configurações → "Minha Fire TV" → "Opções do Desenvolvedor".',
       'Ative "Apps de fontes desconhecidas".',
       "Instale o app Downloader pela loja da Amazon.",
-      "Abra o Downloader e digite o link fornecido.",
+      "Abra o Downloader e digite: cartplay.lovable.app",
       "Baixe e instale o APK do CartPlay.",
       "Abra o CartPlay e aproveite na tela grande!",
     ],
+    actionLabel: "Abrir no Navegador",
+    actionUrl: "https://cartplay.lovable.app",
   },
   {
     id: "smart-tv",
@@ -161,6 +165,17 @@ const Install = () => {
                           loading="lazy"
                         />
                       </div>
+                    </div>
+                  )}
+
+                  {device.actionLabel && device.actionUrl && (
+                    <div className="mt-5">
+                      <Button variant="hero" size="sm" asChild>
+                        <a href={device.actionUrl} target="_blank" rel="noopener noreferrer">
+                          <Download className="w-4 h-4" />
+                          {device.actionLabel}
+                        </a>
+                      </Button>
                     </div>
                   )}
                 </div>
