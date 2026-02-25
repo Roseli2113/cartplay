@@ -34,6 +34,8 @@ interface ProfileUser {
   phone: string;
   created_at: string;
   is_blocked: boolean;
+  subscription_plan?: string;
+  subscription_status?: string;
 }
 
 interface ContentItem {
@@ -231,17 +233,26 @@ const Admin = () => {
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
-    const { data: profiles } = await supabase.from("profiles" as any).select("*");
+    const [{ data: profiles }, { data: subs }] = await Promise.all([
+      supabase.from("profiles" as any).select("*"),
+      supabase.from("subscriptions" as any).select("user_id, plan, status"),
+    ]);
     if (profiles) {
-      setUsers(profiles.map((p: any) => ({
-        id: p.id,
-        user_id: p.user_id,
-        name: p.name || "",
-        email: p.email || "",
-        phone: p.phone || "",
-        created_at: p.created_at,
-        is_blocked: p.is_blocked || false,
-      })));
+      const subMap = new Map((subs || []).map((s: any) => [s.user_id, s]));
+      setUsers(profiles.map((p: any) => {
+        const sub = subMap.get(p.user_id) as any;
+        return {
+          id: p.id,
+          user_id: p.user_id,
+          name: p.name || "",
+          email: p.email || "",
+          phone: p.phone || "",
+          created_at: p.created_at,
+          is_blocked: p.is_blocked || false,
+          subscription_plan: sub?.plan || "none",
+          subscription_status: sub?.status || "inactive",
+        };
+      }));
     }
   }, []);
 
@@ -669,6 +680,7 @@ const Admin = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead className="hidden sm:table-cell">Email</TableHead>
+                <TableHead>Plano</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -677,6 +689,17 @@ const Admin = () => {
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">{user.email}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      user.subscription_plan === "none" || !user.subscription_plan
+                        ? "bg-muted text-muted-foreground"
+                        : user.subscription_status === "active"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-destructive/10 text-destructive"
+                    }`}>
+                      {user.subscription_plan === "none" || !user.subscription_plan ? "Não pagou" : user.subscription_plan}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${!user.is_blocked ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
                       {!user.is_blocked ? "Ativo" : "Bloqueado"}
@@ -725,6 +748,7 @@ const Admin = () => {
                 <TableHead>Email</TableHead>
                 <TableHead className="hidden md:table-cell">Celular</TableHead>
                 <TableHead className="hidden lg:table-cell">Cadastro</TableHead>
+                <TableHead>Plano</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -732,7 +756,7 @@ const Admin = () => {
             <TableBody>
               {paginatedUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum usuário encontrado.</TableCell>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum usuário encontrado.</TableCell>
                 </TableRow>
               ) : (
                 paginatedUsers.map((user) => (
@@ -741,6 +765,17 @@ const Admin = () => {
                     <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{user.phone}</TableCell>
                     <TableCell className="hidden lg:table-cell text-muted-foreground">{new Date(user.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.subscription_plan === "none" || !user.subscription_plan
+                          ? "bg-muted text-muted-foreground"
+                          : user.subscription_status === "active"
+                            ? "bg-primary/10 text-primary"
+                            : "bg-destructive/10 text-destructive"
+                      }`}>
+                        {user.subscription_plan === "none" || !user.subscription_plan ? "Não pagou" : user.subscription_plan}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${!user.is_blocked ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
                         {!user.is_blocked ? "Ativo" : "Bloqueado"}
