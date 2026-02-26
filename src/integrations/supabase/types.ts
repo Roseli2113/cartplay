@@ -326,6 +326,7 @@ export type Database = {
           cta_text: string
           features: string[]
           id: string
+          is_active: boolean
           is_popular: boolean
           name: string
           payment_link: string | null
@@ -340,6 +341,7 @@ export type Database = {
           cta_text?: string
           features?: string[]
           id?: string
+          is_active?: boolean
           is_popular?: boolean
           name: string
           payment_link?: string | null
@@ -354,6 +356,7 @@ export type Database = {
           cta_text?: string
           features?: string[]
           id?: string
+          is_active?: boolean
           is_popular?: boolean
           name?: string
           payment_link?: string | null

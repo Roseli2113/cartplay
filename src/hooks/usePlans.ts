@@ -23,6 +23,7 @@ export function usePlans() {
     const { data } = await supabase
       .from("subscription_plans" as any)
       .select("*")
+      .eq("is_active", true)
       .order("sort_order", { ascending: true });
     if (data) setPlans(data as unknown as SubscriptionPlan[]);
     setLoading(false);
