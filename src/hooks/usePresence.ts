@@ -22,6 +22,8 @@ export function usePresenceTrack(userId: string | undefined) {
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await channel.track({ user_id: userId, online_at: new Date().toISOString() });
+          // Update last_active_at in profiles
+          supabase.from("profiles").update({ last_active_at: new Date().toISOString() } as any).eq("user_id", userId).then();
         }
       });
 

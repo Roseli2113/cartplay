@@ -255,6 +255,7 @@ export type Database = {
           email: string
           id: string
           is_blocked: boolean
+          last_active_at: string | null
           name: string
           phone: string | null
           updated_at: string
@@ -266,6 +267,7 @@ export type Database = {
           email?: string
           id?: string
           is_blocked?: boolean
+          last_active_at?: string | null
           name?: string
           phone?: string | null
           updated_at?: string
@@ -277,6 +279,7 @@ export type Database = {
           email?: string
           id?: string
           is_blocked?: boolean
+          last_active_at?: string | null
           name?: string
           phone?: string | null
           updated_at?: string

@@ -13,7 +13,7 @@ import {
 import {
   Play, Smartphone, Layers, Tv, RefreshCw,
   UserPlus, CreditCard, CheckCircle,
-  Monitor, Flame, QrCode,
+  Monitor, Flame, QrCode, Trophy,
 } from "lucide-react";
 import { usePlans } from "@/hooks/usePlans";
 import { useHomePresenceTrack } from "@/hooks/usePresence";
@@ -71,6 +71,10 @@ const Index = () => {
               decoding="async"
               fetchPriority="high"
             />
+          </div>
+          <div className="mb-6 inline-flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-2 text-sm text-primary font-semibold animate-pulse">
+            <Flame className="w-4 h-4" />
+            🏆 Ano de Copa do Mundo 2026 — Garanta seu acesso agora antes que o preço aumente!
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="hero" size="lg" asChild>
@@ -146,7 +150,8 @@ const Index = () => {
       <section id="planos" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-4">Escolha seu plano</h2>
-          <p className="text-muted-foreground text-center mb-14">Cancele quando quiser. Sem fidelidade.</p>
+          <p className="text-muted-foreground text-center mb-4">Cancele quando quiser. Sem fidelidade.</p>
+          <p className="text-center text-sm font-semibold text-primary mb-14">⚽ Promoção Copa do Mundo 2026 — Os preços vão subir em breve. Assine agora e garanta o valor atual!</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {loading ? (
               <div className="col-span-2 text-center py-8 text-muted-foreground">Carregando planos...</div>

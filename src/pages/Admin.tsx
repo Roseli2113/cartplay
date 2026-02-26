@@ -36,6 +36,7 @@ interface ProfileUser {
   is_blocked: boolean;
   subscription_plan?: string;
   subscription_status?: string;
+  last_active_at?: string | null;
 }
 
 interface ContentItem {
@@ -255,6 +256,7 @@ const Admin = () => {
           is_blocked: p.is_blocked || false,
           subscription_plan: sub?.plan || "none",
           subscription_status: sub?.status || "inactive",
+          last_active_at: p.last_active_at || null,
         };
       }));
     }
@@ -798,6 +800,7 @@ const Admin = () => {
                 <TableHead>Email</TableHead>
                 <TableHead className="hidden md:table-cell">Celular</TableHead>
                 <TableHead className="hidden lg:table-cell">Cadastro</TableHead>
+                <TableHead className="hidden lg:table-cell">Última Atividade</TableHead>
                 <TableHead>Plano</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -815,6 +818,17 @@ const Admin = () => {
                     <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{user.phone}</TableCell>
                     <TableCell className="hidden lg:table-cell text-muted-foreground">{new Date(user.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
+                      {user.last_active_at ? (() => {
+                        const diff = Date.now() - new Date(user.last_active_at).getTime();
+                        const mins = Math.floor(diff / 60000);
+                        if (mins < 1) return "Agora";
+                        if (mins < 60) return `${mins}min atrás`;
+                        const hours = Math.floor(mins / 60);
+                        if (hours < 24) return `${hours}h atrás`;
+                        return new Date(user.last_active_at).toLocaleDateString("pt-BR");
+                      })() : "—"}
+                    </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         !isPaidPlan(user.subscription_plan)
