@@ -129,6 +129,9 @@ const Admin = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [grantAccessOpen, setGrantAccessOpen] = useState(false);
+  const [grantAccessUser, setGrantAccessUser] = useState<ProfileUser | null>(null);
+  const [grantAccessPlan, setGrantAccessPlan] = useState("monthly");
   const [userDateFrom, setUserDateFrom] = useState("");
   const [userDateTo, setUserDateTo] = useState("");
   const [userPage, setUserPage] = useState(1);
@@ -476,20 +479,35 @@ const Admin = () => {
     fetchUsers();
   };
 
-  const grantAccess = async (user: ProfileUser) => {
+  const grantAccess = async () => {
+    if (!grantAccessUser) return;
     const { error } = await supabase
       .from("subscriptions" as any)
-      .update({ status: "active", plan: "monthly" } as any)
+      .update({ status: "active", plan: grantAccessPlan } as any)
+      .eq("user_id", grantAccessUser.user_id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (grantAccessUser.is_blocked) {
+      await supabase.from("profiles" as any).update({ is_blocked: false } as any).eq("id", grantAccessUser.id);
+    }
+    toast({ title: "Acesso liberado com sucesso! ✅" });
+    setGrantAccessOpen(false);
+    setGrantAccessUser(null);
+    fetchUsers();
+  };
+
+  const revokeAccess = async (user: ProfileUser) => {
+    const { error } = await supabase
+      .from("subscriptions" as any)
+      .update({ status: "inactive", plan: "none" } as any)
       .eq("user_id", user.user_id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
       return;
     }
-    // Also unblock if blocked
-    if (user.is_blocked) {
-      await supabase.from("profiles" as any).update({ is_blocked: false } as any).eq("id", user.id);
-    }
-    toast({ title: "Acesso liberado com sucesso! ✅" });
+    toast({ title: "Acesso revogado com sucesso ❌" });
     fetchUsers();
   };
 
@@ -824,8 +842,11 @@ const Admin = () => {
                           <DropdownMenuItem onClick={() => { setSelectedUser(user); setDetailsOpen(true); }}>
                             <Eye className="w-4 h-4 mr-2" /> Ver Detalhes
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => grantAccess(user)}>
+                          <DropdownMenuItem onClick={() => { setGrantAccessUser(user); setGrantAccessPlan("monthly"); setGrantAccessOpen(true); }}>
                             <CheckCircle className="w-4 h-4 mr-2" /> Liberar Acesso
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => revokeAccess(user)} className="text-orange-500 focus:text-orange-500">
+                            <AlertCircle className="w-4 h-4 mr-2" /> Revogar Acesso
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleBlockUser(user)}>
                             <Ban className="w-4 h-4 mr-2" /> {user.is_blocked ? "Desbloquear" : "Bloquear"}
@@ -1790,7 +1811,38 @@ const Admin = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Content Form Dialog */}
+      {/* Grant Access Confirmation */}
+      <Dialog open={grantAccessOpen} onOpenChange={setGrantAccessOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display">Liberar Acesso</DialogTitle>
+            <DialogDescription>
+              Confirme a liberação de acesso para <strong>{grantAccessUser?.name || grantAccessUser?.email}</strong>. Escolha o plano:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 py-2">
+            <Button
+              variant={grantAccessPlan === "monthly" ? "default" : "outline"}
+              className="flex-1"
+              onClick={() => setGrantAccessPlan("monthly")}
+            >
+              Mensal
+            </Button>
+            <Button
+              variant={grantAccessPlan === "annual" ? "default" : "outline"}
+              className="flex-1"
+              onClick={() => setGrantAccessPlan("annual")}
+            >
+              Anual
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGrantAccessOpen(false)}>Cancelar</Button>
+            <Button onClick={grantAccess}>Confirmar Liberação</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={contentFormOpen} onOpenChange={setContentFormOpen}>
         <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col">
           <DialogHeader>
