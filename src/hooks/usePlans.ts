@@ -8,8 +8,9 @@ export interface SubscriptionPlan {
   price: string;
   period: string;
   features: string[];
-  payment_link: string;
+  payment_link: string | null;
   is_popular: boolean;
+  is_active: boolean;
   sort_order: number;
   cta_text: string;
 }
@@ -20,12 +21,13 @@ export function usePlans() {
 
   const fetchPlans = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("subscription_plans" as any)
+    const { data, error } = await supabase
+      .from("subscription_plans")
       .select("*")
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
-    if (data) setPlans(data as unknown as SubscriptionPlan[]);
+    console.log("usePlans fetch:", { data, error });
+    if (data) setPlans(data as SubscriptionPlan[]);
     setLoading(false);
   }, []);
 
