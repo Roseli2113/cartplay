@@ -56,27 +56,17 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
         </div>
         <div className="relative z-10 container mx-auto px-4 text-center max-w-3xl animate-fade-in">
+          <div className="mb-4 inline-flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-2 text-sm text-primary font-semibold animate-pulse">
+            <Flame className="w-4 h-4" />
+            🏆 Ano de Copa do Mundo 2026 — Garanta seu acesso agora antes que o preço aumente!
+          </div>
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-bold leading-tight mb-6">
             Seus filmes e séries <span className="text-gradient">favoritos</span> em um só lugar
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Assista filmes, séries, desenhos e canais ao vivo com qualidade incrível. Disponível em todos os seus dispositivos.
           </p>
-          <div className="mt-8 mb-8 w-full max-w-sm sm:max-w-4xl mx-auto rounded-xl overflow-hidden border border-border shadow-2xl animate-fade-in">
-            <img
-              src={dashboardPreview}
-              alt="CartPlay - Prévia da plataforma"
-              className="block w-full h-auto"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-            />
-          </div>
-          <div className="mb-6 inline-flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-2 text-sm text-primary font-semibold animate-pulse">
-            <Flame className="w-4 h-4" />
-            🏆 Ano de Copa do Mundo 2026 — Garanta seu acesso agora antes que o preço aumente!
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Button variant="hero" size="lg" asChild>
               <Link to="/register">
                 <Play className="w-5 h-5 fill-current" /> Começar agora
@@ -85,6 +75,16 @@ const Index = () => {
             <Button variant="hero-outline" size="lg" asChild>
               <a href="#planos" onClick={(e) => { e.preventDefault(); document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' }); }}>Ver planos</a>
             </Button>
+          </div>
+          <div className="w-full max-w-sm sm:max-w-4xl mx-auto rounded-xl overflow-hidden border border-border shadow-2xl animate-fade-in">
+            <img
+              src={dashboardPreview}
+              alt="CartPlay - Prévia da plataforma"
+              className="block w-full h-auto"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+            />
           </div>
         </div>
       </section>
