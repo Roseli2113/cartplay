@@ -476,6 +476,23 @@ const Admin = () => {
     fetchUsers();
   };
 
+  const grantAccess = async (user: ProfileUser) => {
+    const { error } = await supabase
+      .from("subscriptions" as any)
+      .update({ status: "active", plan: "monthly" } as any)
+      .eq("user_id", user.user_id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    // Also unblock if blocked
+    if (user.is_blocked) {
+      await supabase.from("profiles" as any).update({ is_blocked: false } as any).eq("id", user.id);
+    }
+    toast({ title: "Acesso liberado com sucesso! ✅" });
+    fetchUsers();
+  };
+
   // ── Content Actions ──
   const filteredContent = content.filter((c) =>
     c.title.toLowerCase().includes(contentSearch.toLowerCase())
@@ -806,6 +823,9 @@ const Admin = () => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setSelectedUser(user); setDetailsOpen(true); }}>
                             <Eye className="w-4 h-4 mr-2" /> Ver Detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => grantAccess(user)}>
+                            <CheckCircle className="w-4 h-4 mr-2" /> Liberar Acesso
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleBlockUser(user)}>
                             <Ban className="w-4 h-4 mr-2" /> {user.is_blocked ? "Desbloquear" : "Bloquear"}
