@@ -202,6 +202,7 @@ const Admin = () => {
     is_popular: boolean;
     sort_order: number;
     cta_text: string;
+    is_active: boolean;
   }
   const [plansList, setPlansList] = useState<PlanItem[]>([]);
   const [editingPlan, setEditingPlan] = useState<PlanItem | null>(null);
@@ -1264,18 +1265,34 @@ const Admin = () => {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-display font-bold text-lg">{plan.name}</h3>
+                    <h3 className={`font-display font-bold text-lg ${!plan.is_active ? "opacity-50" : ""}`}>{plan.name}</h3>
                     {plan.is_popular && (
                       <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>
                     )}
+                    {!plan.is_active && (
+                      <span className="bg-muted text-muted-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">OCULTO</span>
+                    )}
                   </div>
-                  <p className="text-2xl font-display font-bold mt-1">
+                  <p className={`text-2xl font-display font-bold mt-1 ${!plan.is_active ? "opacity-50" : ""}`}>
                     {plan.price} <span className="text-sm font-normal text-muted-foreground">{plan.period}</span>
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => openEditPlan(plan)}>
-                  <Edit className="w-4 h-4 mr-1" /> Editar
-                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={plan.is_active}
+                      onCheckedChange={async (checked) => {
+                        await supabase.from("subscription_plans" as any).update({ is_active: checked } as any).eq("id", plan.id);
+                        fetchPlans();
+                        toast({ title: checked ? "Plano ativado" : "Plano ocultado" });
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground">{plan.is_active ? "Ativo" : "Oculto"}</span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => openEditPlan(plan)}>
+                    <Edit className="w-4 h-4 mr-1" /> Editar
+                  </Button>
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {plan.features.map((f, i) => (
