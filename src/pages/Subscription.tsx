@@ -82,7 +82,7 @@ const Subscription = () => {
                   </ul>
 
                   {plan.payment_link ? (
-                    <Button variant={variant as any} size="lg" className="w-full" asChild>
+                    <Button variant={variant as any} size="lg" className={`w-full ${plan.is_popular ? "bg-red-600 hover:bg-red-700 text-white" : ""}`} asChild>
                       <a href={plan.payment_link} target="_blank" rel="noopener noreferrer">
                         {plan.cta_text || (plan.slug === "trial" ? "Começar teste grátis" : `Assinar ${plan.name.toLowerCase()}`)}
                       </a>
