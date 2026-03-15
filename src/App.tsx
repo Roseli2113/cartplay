@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PWAInstallButton from "@/components/PWAInstallButton";
+import DarkPageWrapper from "@/components/DarkPageWrapper";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -27,23 +28,23 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<DarkPageWrapper><Login /></DarkPageWrapper>} />
             <Route path="/install" element={<Install />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/confirm-email" element={<ConfirmEmail />} />
+            <Route path="/register" element={<DarkPageWrapper><Register /></DarkPageWrapper>} />
+            <Route path="/confirm-email" element={<DarkPageWrapper><ConfirmEmail /></DarkPageWrapper>} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Dashboard />
+                <DarkPageWrapper><Dashboard /></DarkPageWrapper>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
               <ProtectedRoute adminOnly>
-                <Admin />
+                <DarkPageWrapper><Admin /></DarkPageWrapper>
               </ProtectedRoute>
             } />
             <Route path="/subscription" element={
               <ProtectedRoute>
-                <Subscription />
+                <DarkPageWrapper><Subscription /></DarkPageWrapper>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
