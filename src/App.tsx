@@ -28,10 +28,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/login" element={<DarkPageWrapper><Login /></DarkPageWrapper>} />
+            <Route path="/login" element={<Login />} />
             <Route path="/install" element={<Install />} />
-            <Route path="/register" element={<DarkPageWrapper><Register /></DarkPageWrapper>} />
-            <Route path="/confirm-email" element={<DarkPageWrapper><ConfirmEmail /></DarkPageWrapper>} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/confirm-email" element={<ConfirmEmail />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <DarkPageWrapper><Dashboard /></DarkPageWrapper>
