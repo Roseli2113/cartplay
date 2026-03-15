@@ -175,9 +175,9 @@ const Index = () => {
                 </ul>
                 <Button variant="hero" className="w-full bg-red-600 hover:bg-red-700 text-white" size="lg" asChild>
                   {p.payment_link && p.payment_link.trim().length > 0 ? (
-                    <a href={p.payment_link.trim()} target="_blank" rel="noopener noreferrer">{p.cta_text || "Assinar agora"}</a>
+                    <a href={p.payment_link.trim()} target="_blank" rel="noopener noreferrer">{p.cta_text || "GARANTIR ACESSO AGORA"}</a>
                   ) : (
-                    <Link to="/register">{p.cta_text || "Assinar agora"}</Link>
+                    <Link to="/register">{p.cta_text || "GARANTIR ACESSO AGORA"}</Link>
                   )}
                 </Button>
               </div>
