@@ -44,7 +44,7 @@ const App = () => (
             } />
             <Route path="/subscription" element={
               <ProtectedRoute>
-                <DarkPageWrapper><Subscription /></DarkPageWrapper>
+                <Subscription />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
