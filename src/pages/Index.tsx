@@ -173,7 +173,7 @@ const Index = () => {
                     </li>
                   ))}
                 </ul>
-                <Button variant={p.is_popular ? "hero" : "hero-outline"} className="w-full" size="lg" asChild>
+                <Button variant={p.is_popular ? "hero" : "hero-outline"} className={`w-full ${p.is_popular ? "bg-red-600 hover:bg-red-700 text-white" : ""}`} size="lg" asChild>
                   {p.payment_link && p.payment_link.trim().length > 0 ? (
                     <a href={p.payment_link.trim()} target="_blank" rel="noopener noreferrer">{p.cta_text || "Assinar agora"}</a>
                   ) : (

@@ -31,7 +31,7 @@ const Register = () => {
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      navigate("/confirm-email");
+      navigate("/dashboard");
     }
   };
 
