@@ -444,8 +444,7 @@ const Dashboard = () => {
   const renderContent = () => {
     if (activeSection === "profile") return renderProfile();
     if (activeSection === "subscription") { navigate("/subscription"); return null; }
-
-    if (activeSection === "tv-app") {
+    if (activeSection === "tv-app") { navigate("/install"); return null; }
       navigate("/install");
       return null;
     }
