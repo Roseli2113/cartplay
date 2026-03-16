@@ -6,8 +6,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
   Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft, Volume2, VolumeX,
-  AlertTriangle,
+  AlertTriangle, Lock,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import VideoPlayer from "@/components/player/VideoPlayer";
 import { extractVideoId } from "@/components/player/YouTubeProvider";
 import { useAuth } from "@/hooks/useAuth";
