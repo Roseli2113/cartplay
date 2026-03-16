@@ -210,6 +210,17 @@ const Admin = () => {
   const [planFormOpen, setPlanFormOpen] = useState(false);
   const [planForm, setPlanForm] = useState({ name: "", price: "", period: "", features: "", payment_link: "", is_popular: false, cta_text: "" });
 
+  // Restricted content state
+  const [restrictedItems, setRestrictedItems] = useState<ContentItem[]>([]);
+  const [restrictedSearch, setRestrictedSearch] = useState("");
+  const [restrictedPage, setRestrictedPage] = useState(1);
+  const [restrictedFormOpen, setRestrictedFormOpen] = useState(false);
+  const [editingRestricted, setEditingRestricted] = useState<ContentItem | null>(null);
+  const [restrictedForm, setRestrictedForm] = useState({ title: "", description: "", stream_url: "", thumbnail_url: "" });
+  const [restrictedPassword, setRestrictedPassword] = useState("1234");
+  const [restrictedPasswordSaving, setRestrictedPasswordSaving] = useState(false);
+  const restrictedFileRef = useRef<HTMLInputElement>(null);
+
   // Fetch banner
   const fetchBanner = useCallback(async () => {
     const { data } = await supabase.from("dashboard_banner" as any).select("*").limit(1);
