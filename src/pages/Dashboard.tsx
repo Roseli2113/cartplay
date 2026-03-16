@@ -103,6 +103,8 @@ const Dashboard = () => {
   const [restrictedPasswordDialog, setRestrictedPasswordDialog] = useState(false);
   const [restrictedPassword, setRestrictedPassword] = useState("");
   const [restrictedPasswordError, setRestrictedPasswordError] = useState(false);
+  const [restrictedContent, setRestrictedContent] = useState<ContentCard[]>([]);
+  const [restrictedDbPassword, setRestrictedDbPassword] = useState("1234");
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
 
