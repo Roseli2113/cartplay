@@ -153,7 +153,7 @@ const Dashboard = () => {
   };
 
   const handleRestrictedPasswordSubmit = () => {
-    if (restrictedPassword === "1234") {
+    if (restrictedPassword === restrictedDbPassword) {
       setRestrictedUnlocked(true);
       setRestrictedPasswordDialog(false);
       setActiveSection("restricted");
