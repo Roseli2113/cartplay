@@ -718,6 +718,7 @@ const Dashboard = () => {
             <button
               className="mr-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
               onClick={() => {
+                if (activeSection === "restricted") setRestrictedUnlocked(false);
                 const history = sectionHistoryRef.current;
                 if (history.length > 1) {
                   history.pop();
