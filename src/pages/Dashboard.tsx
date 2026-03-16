@@ -59,6 +59,7 @@ const menuItems = [
   { icon: Radio, label: "Canais ao Vivo", id: "live" },
   { icon: QrCode, label: "Futebol", id: "cat-futebol", category: "Futebol" },
   { icon: Flame, label: "Novidades", id: "cat-novidades", category: "Novidades" },
+  { icon: Lock, label: "Restrita", id: "restricted" },
   { icon: Heart, label: "Favoritos", id: "favorites" },
   { icon: PlayCircle, label: "Continuar Assistindo", id: "continue" },
   { icon: Monitor, label: "Instalar App", id: "tv-app" },
