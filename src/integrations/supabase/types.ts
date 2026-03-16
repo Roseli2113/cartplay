@@ -287,6 +287,60 @@ export type Database = {
         }
         Relationships: []
       }
+      restricted_content: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          stream_url: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          stream_url?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          stream_url?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restricted_settings: {
+        Row: {
+          created_at: string
+          id: string
+          password: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       series: {
         Row: {
           category: string | null
