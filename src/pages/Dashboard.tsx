@@ -111,9 +111,33 @@ const Dashboard = () => {
 
   // Track section navigation for back button
   const handleSectionChange = (section: string) => {
+    if (section === "restricted") {
+      if (restrictedUnlocked) {
+        setActiveSection("restricted");
+        sectionHistoryRef.current.push("restricted");
+        window.history.pushState({ section: "restricted" }, "");
+      } else {
+        setRestrictedPassword("");
+        setRestrictedPasswordError(false);
+        setRestrictedPasswordDialog(true);
+      }
+      return;
+    }
     setActiveSection(section);
     sectionHistoryRef.current.push(section);
     window.history.pushState({ section }, "");
+  };
+
+  const handleRestrictedPasswordSubmit = () => {
+    if (restrictedPassword === "1234") {
+      setRestrictedUnlocked(true);
+      setRestrictedPasswordDialog(false);
+      setActiveSection("restricted");
+      sectionHistoryRef.current.push("restricted");
+      window.history.pushState({ section: "restricted" }, "");
+    } else {
+      setRestrictedPasswordError(true);
+    }
   };
 
   // Handle browser back button - navigate within app sections instead of leaving
