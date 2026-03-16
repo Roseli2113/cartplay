@@ -173,6 +173,8 @@ const Dashboard = () => {
       } else {
         const history = sectionHistoryRef.current;
         if (history.length > 1) {
+          const currentSection = history[history.length - 1];
+          if (currentSection === "restricted") setRestrictedUnlocked(false);
           history.pop();
           const prevSection = history[history.length - 1];
           setActiveSection(prevSection);
