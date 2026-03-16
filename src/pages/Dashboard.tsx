@@ -111,8 +111,30 @@ const Dashboard = () => {
   // Track this user's online presence
   usePresenceTrack(user?.id);
 
+  // Fetch restricted password from DB
+  useEffect(() => {
+    const fetchRestrictedSettings = async () => {
+      const { data } = await supabase.from("restricted_settings" as any).select("password").limit(1);
+      if (data && data.length > 0) setRestrictedDbPassword((data[0] as any).password);
+    };
+    fetchRestrictedSettings();
+  }, []);
+
+  // Fetch restricted content from DB
+  const fetchRestrictedContent = useCallback(async () => {
+    const { data } = await supabase.from("restricted_content" as any).select("id, title, category, thumbnail_url, stream_url").order("created_at", { ascending: false });
+    if (data) setRestrictedContent(data as unknown as ContentCard[]);
+  }, []);
+
+  useEffect(() => { if (restrictedUnlocked) fetchRestrictedContent(); }, [restrictedUnlocked, fetchRestrictedContent]);
+
   // Track section navigation for back button
   const handleSectionChange = (section: string) => {
+    // Reset restricted unlock when leaving restricted section
+    if (activeSection === "restricted" && section !== "restricted") {
+      setRestrictedUnlocked(false);
+    }
+
     if (section === "restricted") {
       if (restrictedUnlocked) {
         setActiveSection("restricted");
