@@ -99,6 +99,10 @@ const Dashboard = () => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [trailerMuted, setTrailerMuted] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [restrictedUnlocked, setRestrictedUnlocked] = useState(false);
+  const [restrictedPasswordDialog, setRestrictedPasswordDialog] = useState(false);
+  const [restrictedPassword, setRestrictedPassword] = useState("");
+  const [restrictedPasswordError, setRestrictedPasswordError] = useState(false);
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
 
