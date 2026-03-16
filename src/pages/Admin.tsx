@@ -371,6 +371,88 @@ const Admin = () => {
     if (activeSection === "plans") fetchPlans();
   }, [activeSection, fetchPlans]);
 
+  // Restricted content functions
+  const fetchRestrictedItems = useCallback(async () => {
+    const { data } = await supabase.from("restricted_content" as any).select("*").order("created_at", { ascending: false });
+    if (data) setRestrictedItems(data as unknown as ContentItem[]);
+  }, []);
+
+  const fetchRestrictedPassword = useCallback(async () => {
+    const { data } = await supabase.from("restricted_settings" as any).select("password").limit(1);
+    if (data && data.length > 0) setRestrictedPassword((data[0] as any).password);
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === "restricted") { fetchRestrictedItems(); fetchRestrictedPassword(); }
+  }, [activeSection, fetchRestrictedItems, fetchRestrictedPassword]);
+
+  const saveRestrictedPassword = async () => {
+    setRestrictedPasswordSaving(true);
+    const { error } = await supabase.from("restricted_settings" as any).update({ password: restrictedPassword } as any).neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) {
+      // Try updating all rows
+      const { data: settings } = await supabase.from("restricted_settings" as any).select("id").limit(1);
+      if (settings && settings.length > 0) {
+        await supabase.from("restricted_settings" as any).update({ password: restrictedPassword } as any).eq("id", (settings[0] as any).id);
+      }
+    }
+    toast({ title: "Senha atualizada com sucesso! 🔒" });
+    setRestrictedPasswordSaving(false);
+  };
+
+  const openAddRestricted = () => {
+    setEditingRestricted(null);
+    setRestrictedForm({ title: "", description: "", stream_url: "", thumbnail_url: "" });
+    setRestrictedFormOpen(true);
+  };
+
+  const openEditRestricted = (item: ContentItem) => {
+    setEditingRestricted(item);
+    setRestrictedForm({ title: item.title, description: item.description || "", stream_url: item.stream_url, thumbnail_url: item.thumbnail_url || "" });
+    setRestrictedFormOpen(true);
+  };
+
+  const saveRestricted = async () => {
+    if (!restrictedForm.title || !restrictedForm.stream_url) {
+      toast({ title: "Preencha os campos obrigatórios", description: "Título e URL são obrigatórios.", variant: "destructive" });
+      return;
+    }
+    const embedUrl = convertToEmbedUrl(restrictedForm.stream_url.trim());
+    if (editingRestricted) {
+      const { error } = await supabase.from("restricted_content" as any).update({
+        title: restrictedForm.title, description: restrictedForm.description, stream_url: embedUrl, thumbnail_url: restrictedForm.thumbnail_url, category: "Restrito",
+      } as any).eq("id", editingRestricted.id);
+      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    } else {
+      const { error } = await supabase.from("restricted_content" as any).insert({
+        title: restrictedForm.title, description: restrictedForm.description, stream_url: embedUrl, thumbnail_url: restrictedForm.thumbnail_url, category: "Restrito",
+      });
+      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    }
+    toast({ title: editingRestricted ? "Conteúdo atualizado" : "Conteúdo adicionado" });
+    setRestrictedFormOpen(false);
+    fetchRestrictedItems();
+  };
+
+  const deleteRestrictedItem = async (id: string) => {
+    const { error } = await supabase.from("restricted_content" as any).delete().eq("id", id);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Conteúdo excluído" });
+    fetchRestrictedItems();
+  };
+
+  const uploadRestrictedThumbnail = async (file: File) => {
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const filePath = `restricted/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("thumbnails").upload(filePath, file);
+    if (error) { toast({ title: "Erro no upload", description: error.message, variant: "destructive" }); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("thumbnails").getPublicUrl(filePath);
+    setRestrictedForm((f) => ({ ...f, thumbnail_url: urlData.publicUrl }));
+    setUploading(false);
+    toast({ title: "Imagem enviada!" });
+  };
+
   const openEditPlan = (plan: PlanItem) => {
     setEditingPlan(plan);
     setPlanForm({
