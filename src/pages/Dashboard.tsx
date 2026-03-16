@@ -503,10 +503,10 @@ const Dashboard = () => {
         )}
 
         <h2 className="text-2xl font-display font-bold mb-1">
-          {activeSection === "catalog" ? "Catálogo Completo" : activeSection === "live" ? "Canais ao Vivo" : `Olá, ${profile?.name || "bem-vindo"}! 👋`}
+          {activeSection === "home" ? `Olá, ${profile?.name || "bem-vindo"}! 👋` : menuItems.find(m => m.id === activeSection)?.label || "Início"}
         </h2>
         <p className="text-muted-foreground mb-4">
-          {activeSection === "catalog" ? "Explore todo o nosso conteúdo." : activeSection === "live" ? "Assista aos canais ao vivo." : "O que você quer assistir hoje?"}
+          {activeSection === "home" ? "O que você quer assistir hoje?" : `Explore ${menuItems.find(m => m.id === activeSection)?.label || "o conteúdo"}.`}
         </p>
 
         {/* Search */}
