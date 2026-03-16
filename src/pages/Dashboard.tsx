@@ -745,6 +745,35 @@ const Dashboard = () => {
         />
       )}
       <WhatsAppButton />
+
+      {/* Restricted Password Dialog */}
+      <Dialog open={restrictedPasswordDialog} onOpenChange={setRestrictedPasswordDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" /> Área Restrita
+            </DialogTitle>
+            <DialogDescription>
+              Digite a senha para acessar o conteúdo restrito.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input
+              type="password"
+              placeholder="Senha"
+              value={restrictedPassword}
+              onChange={(e) => { setRestrictedPassword(e.target.value); setRestrictedPasswordError(false); }}
+              onKeyDown={(e) => e.key === "Enter" && handleRestrictedPasswordSubmit()}
+            />
+            {restrictedPasswordError && (
+              <p className="text-sm text-destructive">Senha incorreta. Tente novamente.</p>
+            )}
+            <Button variant="hero" className="w-full" onClick={handleRestrictedPasswordSubmit}>
+              Acessar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
