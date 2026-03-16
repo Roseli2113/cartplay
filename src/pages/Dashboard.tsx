@@ -445,9 +445,6 @@ const Dashboard = () => {
     if (activeSection === "profile") return renderProfile();
     if (activeSection === "subscription") { navigate("/subscription"); return null; }
     if (activeSection === "tv-app") { navigate("/install"); return null; }
-      navigate("/install");
-      return null;
-    }
 
     if (activeSection === "favorites") return renderFavorites();
     if (activeSection === "continue") return renderContinueWatching();
