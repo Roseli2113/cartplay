@@ -473,6 +473,17 @@ const Dashboard = () => {
     </div>
   );
 
+  const renderRestricted = () => (
+    <div className="animate-fade-in">
+      <h2 className="text-2xl font-display font-bold mb-1">🔒 Conteúdo Restrito</h2>
+      <p className="text-muted-foreground mb-6">Conteúdo exclusivo com acesso protegido.</p>
+      <div className="text-center py-16">
+        <Lock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-muted-foreground">Nenhum conteúdo restrito disponível no momento.</p>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     if (activeSection === "profile") return renderProfile();
     if (activeSection === "subscription") { navigate("/subscription"); return null; }
@@ -480,6 +491,7 @@ const Dashboard = () => {
 
     if (activeSection === "favorites") return renderFavorites();
     if (activeSection === "continue") return renderContinueWatching();
+    if (activeSection === "restricted") return renderRestricted();
 
     // Home / Catalog / Live — main content with filters
     const displayContent: ContentCard[] = content.length > 0 ? content : Array.from({ length: 6 }, (_, i) => ({
