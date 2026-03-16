@@ -48,10 +48,16 @@ const getTrailerEmbedSrc = (trailerUrl: string, isMuted: boolean) => {
 
 const menuItems = [
   { icon: Home, label: "Início", id: "home" },
-  { icon: Film, label: "Catálogo", id: "catalog" },
+  { icon: Film, label: "Filmes", id: "cat-filmes", category: "Filmes" },
+  { icon: Tv, label: "Séries", id: "cat-series", category: "Séries" },
+  { icon: PlayCircle, label: "Desenhos", id: "cat-desenhos", category: "Desenhos" },
+  { icon: Flame, label: "Doramas", id: "cat-doramas", category: "Doramas" },
+  { icon: Monitor, label: "Canais", id: "cat-canais", category: "Canais" },
+  { icon: Radio, label: "Canais ao Vivo", id: "live" },
+  { icon: QrCode, label: "Futebol", id: "cat-futebol", category: "Futebol" },
+  { icon: Flame, label: "Novidades", id: "cat-novidades", category: "Novidades" },
   { icon: Heart, label: "Favoritos", id: "favorites" },
   { icon: PlayCircle, label: "Continuar Assistindo", id: "continue" },
-  { icon: Radio, label: "Canais ao Vivo", id: "live" },
   { icon: Monitor, label: "Instalar App", id: "tv-app" },
   { icon: CreditCard, label: "Assinatura", id: "subscription" },
   { icon: User, label: "Perfil", id: "profile" },
