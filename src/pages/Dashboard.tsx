@@ -226,15 +226,12 @@ const Dashboard = () => {
 
   // Sidebar section → category mapping
   useEffect(() => {
-    const map: Record<string, string | null> = {
-      home: null,
-      catalog: null,
-      live: "Canais",
-    };
-    if (activeSection in map) {
-      setActiveCategory(map[activeSection]);
+    const currentMenu = menuItems.find(m => m.id === activeSection);
+    if (currentMenu && 'category' in currentMenu && currentMenu.category) {
+      setActiveCategory(currentMenu.category);
+    } else if (activeSection === "home" || activeSection === "live") {
+      setActiveCategory(activeSection === "live" ? "Canais" : null);
     }
-    // Don't reset category for favorites/continue/tv-app/profile
   }, [activeSection]);
 
   // Fetch active banner
