@@ -6,8 +6,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Play, Home, Film, Heart, PlayCircle, Radio, Monitor, User, LogOut, Menu, X,
   Flame, Tv, QrCode, ChevronRight, Shield, Search, HeartOff, Camera, CreditCard, Save, Loader2, ArrowLeft, Volume2, VolumeX,
-  AlertTriangle,
+  AlertTriangle, Lock,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import VideoPlayer from "@/components/player/VideoPlayer";
 import { extractVideoId } from "@/components/player/YouTubeProvider";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,6 +59,7 @@ const menuItems = [
   { icon: Radio, label: "Canais ao Vivo", id: "live" },
   { icon: QrCode, label: "Futebol", id: "cat-futebol", category: "Futebol" },
   { icon: Flame, label: "Novidades", id: "cat-novidades", category: "Novidades" },
+  { icon: Lock, label: "Restrita", id: "restricted" },
   { icon: Heart, label: "Favoritos", id: "favorites" },
   { icon: PlayCircle, label: "Continuar Assistindo", id: "continue" },
   { icon: Monitor, label: "Instalar App", id: "tv-app" },
@@ -95,6 +99,10 @@ const Dashboard = () => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [trailerMuted, setTrailerMuted] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [restrictedUnlocked, setRestrictedUnlocked] = useState(false);
+  const [restrictedPasswordDialog, setRestrictedPasswordDialog] = useState(false);
+  const [restrictedPassword, setRestrictedPassword] = useState("");
+  const [restrictedPasswordError, setRestrictedPasswordError] = useState(false);
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
 
@@ -103,9 +111,33 @@ const Dashboard = () => {
 
   // Track section navigation for back button
   const handleSectionChange = (section: string) => {
+    if (section === "restricted") {
+      if (restrictedUnlocked) {
+        setActiveSection("restricted");
+        sectionHistoryRef.current.push("restricted");
+        window.history.pushState({ section: "restricted" }, "");
+      } else {
+        setRestrictedPassword("");
+        setRestrictedPasswordError(false);
+        setRestrictedPasswordDialog(true);
+      }
+      return;
+    }
     setActiveSection(section);
     sectionHistoryRef.current.push(section);
     window.history.pushState({ section }, "");
+  };
+
+  const handleRestrictedPasswordSubmit = () => {
+    if (restrictedPassword === "1234") {
+      setRestrictedUnlocked(true);
+      setRestrictedPasswordDialog(false);
+      setActiveSection("restricted");
+      sectionHistoryRef.current.push("restricted");
+      window.history.pushState({ section: "restricted" }, "");
+    } else {
+      setRestrictedPasswordError(true);
+    }
   };
 
   // Handle browser back button - navigate within app sections instead of leaving
@@ -441,6 +473,17 @@ const Dashboard = () => {
     </div>
   );
 
+  const renderRestricted = () => (
+    <div className="animate-fade-in">
+      <h2 className="text-2xl font-display font-bold mb-1">🔒 Conteúdo Restrito</h2>
+      <p className="text-muted-foreground mb-6">Conteúdo exclusivo com acesso protegido.</p>
+      <div className="text-center py-16">
+        <Lock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-muted-foreground">Nenhum conteúdo restrito disponível no momento.</p>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     if (activeSection === "profile") return renderProfile();
     if (activeSection === "subscription") { navigate("/subscription"); return null; }
@@ -448,6 +491,7 @@ const Dashboard = () => {
 
     if (activeSection === "favorites") return renderFavorites();
     if (activeSection === "continue") return renderContinueWatching();
+    if (activeSection === "restricted") return renderRestricted();
 
     // Home / Catalog / Live — main content with filters
     const displayContent: ContentCard[] = content.length > 0 ? content : Array.from({ length: 6 }, (_, i) => ({
@@ -701,6 +745,35 @@ const Dashboard = () => {
         />
       )}
       <WhatsAppButton />
+
+      {/* Restricted Password Dialog */}
+      <Dialog open={restrictedPasswordDialog} onOpenChange={setRestrictedPasswordDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" /> Área Restrita
+            </DialogTitle>
+            <DialogDescription>
+              Digite a senha para acessar o conteúdo restrito.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input
+              type="password"
+              placeholder="Senha"
+              value={restrictedPassword}
+              onChange={(e) => { setRestrictedPassword(e.target.value); setRestrictedPasswordError(false); }}
+              onKeyDown={(e) => e.key === "Enter" && handleRestrictedPasswordSubmit()}
+            />
+            {restrictedPasswordError && (
+              <p className="text-sm text-destructive">Senha incorreta. Tente novamente.</p>
+            )}
+            <Button variant="hero" className="w-full" onClick={handleRestrictedPasswordSubmit}>
+              Acessar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
