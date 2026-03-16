@@ -1543,6 +1543,153 @@ const Admin = () => {
     </div>
   );
 
+  const filteredRestricted = restrictedItems.filter(c => c.title.toLowerCase().includes(restrictedSearch.toLowerCase()));
+  const totalRestrictedPages = Math.max(1, Math.ceil(filteredRestricted.length / CONTENT_PER_PAGE));
+  const paginatedRestricted = filteredRestricted.slice((restrictedPage - 1) * CONTENT_PER_PAGE, restrictedPage * CONTENT_PER_PAGE);
+
+  const renderRestrictedManager = () => (
+    <div className="animate-fade-in space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-display font-bold mb-1">🔒 Conteúdo Restrito</h2>
+          <p className="text-muted-foreground text-sm">{restrictedItems.length} itens</p>
+        </div>
+        <Button variant="hero" onClick={openAddRestricted}><Plus className="w-4 h-4 mr-1" /> Adicionar</Button>
+      </div>
+
+      {/* Password config */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Lock className="w-4 h-4" /> Senha da Área Restrita</h3>
+        <div className="flex gap-2 max-w-md">
+          <Input value={restrictedPassword} onChange={(e) => setRestrictedPassword(e.target.value)} placeholder="Senha" />
+          <Button variant="outline" onClick={saveRestrictedPassword} disabled={restrictedPasswordSaving}>
+            <Save className="w-4 h-4 mr-1" /> Salvar
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">Esta senha será solicitada ao usuário para acessar a aba Restrita.</p>
+      </div>
+
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Buscar conteúdo restrito..." value={restrictedSearch} onChange={(e) => { setRestrictedSearch(e.target.value); setRestrictedPage(1); }} className="pl-10" />
+      </div>
+
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {/* Mobile cards */}
+        <div className="sm:hidden divide-y divide-border">
+          {paginatedRestricted.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">Nenhum conteúdo restrito.</div>
+          ) : paginatedRestricted.map((item) => (
+            <div key={item.id} className="p-3 flex items-center gap-3">
+              {item.thumbnail_url ? (
+                <img src={item.thumbnail_url} alt={item.title} className="w-12 h-16 object-cover rounded" />
+              ) : (
+                <div className="w-12 h-16 bg-muted rounded flex items-center justify-center"><Film className="w-5 h-5 text-muted-foreground/30" /></div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{item.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{item.stream_url}</p>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => openEditRestricted(item)}><Edit className="w-4 h-4 mr-2" /> Editar</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive" onClick={() => deleteRestrictedItem(item.id)}><Trash2 className="w-4 h-4 mr-2" /> Excluir</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ))}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Thumb</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>URL</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedRestricted.length === 0 ? (
+                <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhum conteúdo restrito.</TableCell></TableRow>
+              ) : paginatedRestricted.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.thumbnail_url ? <img src={item.thumbnail_url} alt="" className="w-10 h-14 object-cover rounded" /> : <div className="w-10 h-14 bg-muted rounded" />}</TableCell>
+                  <TableCell className="font-medium">{item.title}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{item.stream_url}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditRestricted(item)}><Edit className="w-4 h-4 mr-2" /> Editar</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => deleteRestrictedItem(item.id)}><Trash2 className="w-4 h-4 mr-2" /> Excluir</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+      {totalRestrictedPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Página {restrictedPage} de {totalRestrictedPages}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={restrictedPage <= 1} onClick={() => setRestrictedPage(p => p - 1)}><ChevronLeft className="w-4 h-4 mr-1" /> Anterior</Button>
+            <Button variant="outline" size="sm" disabled={restrictedPage >= totalRestrictedPages} onClick={() => setRestrictedPage(p => p + 1)}>Próximo <ChevronRight className="w-4 h-4 ml-1" /></Button>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Restricted Dialog */}
+      <Dialog open={restrictedFormOpen} onOpenChange={setRestrictedFormOpen}>
+        <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="font-display">{editingRestricted ? "Editar Conteúdo Restrito" : "Adicionar Conteúdo Restrito"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Título</label>
+              <Input placeholder="Nome do conteúdo" value={restrictedForm.title} onChange={(e) => setRestrictedForm(f => ({ ...f, title: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Descrição</label>
+              <Input placeholder="Descrição (opcional)" value={restrictedForm.description} onChange={(e) => setRestrictedForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">URL de Streaming</label>
+              <Input placeholder="https://..." value={restrictedForm.stream_url} onChange={(e) => setRestrictedForm(f => ({ ...f, stream_url: e.target.value }))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Imagem / Thumbnail</label>
+              <input type="file" ref={restrictedFileRef} accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) uploadRestrictedThumbnail(file); }} />
+              <div className="flex gap-2 mb-2">
+                <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => restrictedFileRef.current?.click()} className="flex-1">
+                  <Upload className="w-4 h-4 mr-1" /> {uploading ? "Enviando..." : "Enviar Imagem"}
+                </Button>
+              </div>
+              {restrictedForm.thumbnail_url && (
+                <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
+                  <img src={restrictedForm.thumbnail_url} alt="Preview" className="w-full h-32 object-cover" />
+                  <button onClick={() => setRestrictedForm(f => ({ ...f, thumbnail_url: "" }))} className="absolute top-1 right-1 bg-background/80 rounded-full p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors"><X className="w-4 h-4" /></button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-1.5">Ou cole uma URL:</p>
+              <Input placeholder="https://... (opcional)" value={restrictedForm.thumbnail_url} onChange={(e) => setRestrictedForm(f => ({ ...f, thumbnail_url: e.target.value }))} className="mt-1" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRestrictedFormOpen(false)}>Cancelar</Button>
+            <Button variant="hero" onClick={saveRestricted}><Save className="w-4 h-4" /> Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+
   const renderTvInstructions = () => (
     <div className="animate-fade-in space-y-6 max-w-3xl">
       <div>
