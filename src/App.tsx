@@ -39,7 +39,7 @@ const App = () => (
             } />
             <Route path="/admin" element={
               <ProtectedRoute adminOnly>
-                <DarkPageWrapper><Admin /></DarkPageWrapper>
+                <Admin />
               </ProtectedRoute>
             } />
             <Route path="/subscription" element={
