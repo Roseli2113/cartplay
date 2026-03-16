@@ -2016,6 +2016,7 @@ const Admin = () => {
           {activeSection === "plans" && renderPlans()}
           {activeSection === "sales" && renderSales()}
           {activeSection === "transactions" && renderTransactions()}
+          {activeSection === "restricted" && renderRestrictedManager()}
           {isContentSection && renderContentManager()}
         </div>
       </main>
