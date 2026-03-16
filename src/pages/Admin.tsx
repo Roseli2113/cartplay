@@ -111,6 +111,7 @@ const adminMenu = [
   { icon: Link2, label: "Integração Pagamento", id: "payment-integration" },
   { icon: ShoppingCart, label: "Vendas", id: "sales" },
   { icon: History, label: "Histórico Transações", id: "transactions" },
+  { icon: Lock, label: "Conteúdo Restrito", id: "restricted" },
   { icon: BookOpen, label: "Instruções TV App", id: "tv-instructions" },
 ];
 
