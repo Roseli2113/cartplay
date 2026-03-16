@@ -48,10 +48,16 @@ const getTrailerEmbedSrc = (trailerUrl: string, isMuted: boolean) => {
 
 const menuItems = [
   { icon: Home, label: "Início", id: "home" },
-  { icon: Film, label: "Catálogo", id: "catalog" },
+  { icon: Film, label: "Filmes", id: "cat-filmes", category: "Filmes" },
+  { icon: Tv, label: "Séries", id: "cat-series", category: "Séries" },
+  { icon: PlayCircle, label: "Desenhos", id: "cat-desenhos", category: "Desenhos" },
+  { icon: Flame, label: "Doramas", id: "cat-doramas", category: "Doramas" },
+  { icon: Monitor, label: "Canais", id: "cat-canais", category: "Canais" },
+  { icon: Radio, label: "Canais ao Vivo", id: "live" },
+  { icon: QrCode, label: "Futebol", id: "cat-futebol", category: "Futebol" },
+  { icon: Flame, label: "Novidades", id: "cat-novidades", category: "Novidades" },
   { icon: Heart, label: "Favoritos", id: "favorites" },
   { icon: PlayCircle, label: "Continuar Assistindo", id: "continue" },
-  { icon: Radio, label: "Canais ao Vivo", id: "live" },
   { icon: Monitor, label: "Instalar App", id: "tv-app" },
   { icon: CreditCard, label: "Assinatura", id: "subscription" },
   { icon: User, label: "Perfil", id: "profile" },
@@ -220,15 +226,12 @@ const Dashboard = () => {
 
   // Sidebar section → category mapping
   useEffect(() => {
-    const map: Record<string, string | null> = {
-      home: null,
-      catalog: null,
-      live: "Canais",
-    };
-    if (activeSection in map) {
-      setActiveCategory(map[activeSection]);
+    const currentMenu = menuItems.find(m => m.id === activeSection);
+    if (currentMenu && 'category' in currentMenu && currentMenu.category) {
+      setActiveCategory(currentMenu.category);
+    } else if (activeSection === "home" || activeSection === "live") {
+      setActiveCategory(activeSection === "live" ? "Canais" : null);
     }
-    // Don't reset category for favorites/continue/tv-app/profile
   }, [activeSection]);
 
   // Fetch active banner
@@ -441,11 +444,7 @@ const Dashboard = () => {
   const renderContent = () => {
     if (activeSection === "profile") return renderProfile();
     if (activeSection === "subscription") { navigate("/subscription"); return null; }
-
-    if (activeSection === "tv-app") {
-      navigate("/install");
-      return null;
-    }
+    if (activeSection === "tv-app") { navigate("/install"); return null; }
 
     if (activeSection === "favorites") return renderFavorites();
     if (activeSection === "continue") return renderContinueWatching();
@@ -504,10 +503,10 @@ const Dashboard = () => {
         )}
 
         <h2 className="text-2xl font-display font-bold mb-1">
-          {activeSection === "catalog" ? "Catálogo Completo" : activeSection === "live" ? "Canais ao Vivo" : `Olá, ${profile?.name || "bem-vindo"}! 👋`}
+          {activeSection === "home" ? `Olá, ${profile?.name || "bem-vindo"}! 👋` : menuItems.find(m => m.id === activeSection)?.label || "Início"}
         </h2>
         <p className="text-muted-foreground mb-4">
-          {activeSection === "catalog" ? "Explore todo o nosso conteúdo." : activeSection === "live" ? "Assista aos canais ao vivo." : "O que você quer assistir hoje?"}
+          {activeSection === "home" ? "O que você quer assistir hoje?" : `Explore ${menuItems.find(m => m.id === activeSection)?.label || "o conteúdo"}.`}
         </p>
 
         {/* Search */}
