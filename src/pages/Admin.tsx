@@ -17,7 +17,7 @@ import {
   Clapperboard, Baby, Dribbble, ChevronRight, ChevronLeft, ArrowLeft, Upload, ImageIcon,
   Monitor, BookOpen, Image, Wifi, Flame, CreditCard, UserPlus, Clock,
   Link2, Copy, CheckCircle, History, ShoppingCart, Send, AlertCircle, RefreshCw,
-  Calendar,
+  Calendar, Lock,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
