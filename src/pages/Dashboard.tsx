@@ -103,14 +103,38 @@ const Dashboard = () => {
   const [restrictedPasswordDialog, setRestrictedPasswordDialog] = useState(false);
   const [restrictedPassword, setRestrictedPassword] = useState("");
   const [restrictedPasswordError, setRestrictedPasswordError] = useState(false);
+  const [restrictedContent, setRestrictedContent] = useState<ContentCard[]>([]);
+  const [restrictedDbPassword, setRestrictedDbPassword] = useState("1234");
   const playingContentRef = useRef(playingContent);
   playingContentRef.current = playingContent;
 
   // Track this user's online presence
   usePresenceTrack(user?.id);
 
+  // Fetch restricted password from DB
+  useEffect(() => {
+    const fetchRestrictedSettings = async () => {
+      const { data } = await supabase.from("restricted_settings" as any).select("password").limit(1);
+      if (data && data.length > 0) setRestrictedDbPassword((data[0] as any).password);
+    };
+    fetchRestrictedSettings();
+  }, []);
+
+  // Fetch restricted content from DB
+  const fetchRestrictedContent = useCallback(async () => {
+    const { data } = await supabase.from("restricted_content" as any).select("id, title, category, thumbnail_url, stream_url").order("created_at", { ascending: false });
+    if (data) setRestrictedContent(data as unknown as ContentCard[]);
+  }, []);
+
+  useEffect(() => { if (restrictedUnlocked) fetchRestrictedContent(); }, [restrictedUnlocked, fetchRestrictedContent]);
+
   // Track section navigation for back button
   const handleSectionChange = (section: string) => {
+    // Reset restricted unlock when leaving restricted section
+    if (activeSection === "restricted" && section !== "restricted") {
+      setRestrictedUnlocked(false);
+    }
+
     if (section === "restricted") {
       if (restrictedUnlocked) {
         setActiveSection("restricted");
@@ -129,7 +153,7 @@ const Dashboard = () => {
   };
 
   const handleRestrictedPasswordSubmit = () => {
-    if (restrictedPassword === "1234") {
+    if (restrictedPassword === restrictedDbPassword) {
       setRestrictedUnlocked(true);
       setRestrictedPasswordDialog(false);
       setActiveSection("restricted");
@@ -149,6 +173,8 @@ const Dashboard = () => {
       } else {
         const history = sectionHistoryRef.current;
         if (history.length > 1) {
+          const currentSection = history[history.length - 1];
+          if (currentSection === "restricted") setRestrictedUnlocked(false);
           history.pop();
           const prevSection = history[history.length - 1];
           setActiveSection(prevSection);
@@ -477,10 +503,18 @@ const Dashboard = () => {
     <div className="animate-fade-in">
       <h2 className="text-2xl font-display font-bold mb-1">🔒 Conteúdo Restrito</h2>
       <p className="text-muted-foreground mb-6">Conteúdo exclusivo com acesso protegido.</p>
-      <div className="text-center py-16">
-        <Lock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-        <p className="text-muted-foreground">Nenhum conteúdo restrito disponível no momento.</p>
-      </div>
+      {restrictedContent.length === 0 ? (
+        <div className="text-center py-16">
+          <Lock className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-muted-foreground">Nenhum conteúdo restrito disponível no momento.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-3">
+          {restrictedContent.map((card) => (
+            <ContentCardEl key={card.id} card={card} showFavBtn={false} />
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -684,6 +718,7 @@ const Dashboard = () => {
             <button
               className="mr-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
               onClick={() => {
+                if (activeSection === "restricted") setRestrictedUnlocked(false);
                 const history = sectionHistoryRef.current;
                 if (history.length > 1) {
                   history.pop();
