@@ -53,7 +53,7 @@ const Index = () => {
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-28 md:pt-16">
         <div className="absolute inset-0">
           <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background" />
         </div>
         <div className="relative z-10 container mx-auto px-4 text-center max-w-3xl animate-fade-in">
           <div className="mb-4 inline-flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-2 text-sm text-primary font-semibold animate-pulse">
