@@ -3,24 +3,24 @@ import { useEffect } from "react";
 export function useTrackingScripts() {
   useEffect(() => {
     // Meta Pixel
-    if (!(window as any).fbq) {
+    const w = window as any;
+    if (!w.fbq) {
+      const n: any = function () {
+        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+      };
+      w.fbq = n;
+      if (!w._fbq) w._fbq = n;
+      n.push = n;
+      n.loaded = true;
+      n.version = "2.0";
+      n.queue = [];
+
       const fbScript = document.createElement("script");
       fbScript.async = true;
       fbScript.src = "https://connect.facebook.net/en_US/fbevents.js";
       document.head.appendChild(fbScript);
 
-      (function (f: any) {
-        const n = (f.fbq = function () {
-          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-        });
-        if (!f._fbq) f._fbq = n;
-        n.push = n;
-        n.loaded = true;
-        n.version = "2.0";
-        n.queue = [] as any[];
-      })(window);
-
-      (window as any).fbq("init", "1218520410268993");
+      w.fbq("init", "1218520410268993");
     }
     (window as any).fbq("track", "PageView");
 
