@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { usePlans } from "@/hooks/usePlans";
 import { useHomePresenceTrack } from "@/hooks/usePresence";
+import { useTrackingScripts } from "@/hooks/useTrackingScripts";
 
 const benefits = [
   { icon: Smartphone, title: "Assista em Qualquer Lugar", desc: "No celular, tablet, computador ou Smart TV. Seu entretenimento te acompanha." },
