@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Play, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useTrackingScripts } from "@/hooks/useTrackingScripts";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 const Register = () => {
@@ -18,6 +19,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  useTrackingScripts();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
