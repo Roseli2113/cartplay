@@ -22,7 +22,7 @@ export function useTrackingScripts() {
 
       w.fbq("init", "1218520410268993");
     }
-    (window as any).fbq("track", "PageView");
+    w.fbq("track", "PageView");
 
     // Noscript pixel (img fallback)
     const existing = document.getElementById("fb-noscript-pixel");

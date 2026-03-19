@@ -43,6 +43,7 @@ const steps = [
 const Index = () => {
   const { plans, loading } = usePlans();
   useHomePresenceTrack();
+  useTrackingScripts();
   // Show only monthly and annual on the home page
   const displayPlans = plans.filter(p => p.slug !== "trial");
 

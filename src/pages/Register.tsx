@@ -19,6 +19,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  useTrackingScripts();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
